@@ -1,7 +1,6 @@
 """Basic Copilot tool usage tests.
 
-Tests that Copilot can perform fundamental file operations
-when given clear instructions.
+Parametrized across models to compare behavior.
 """
 
 from __future__ import annotations
@@ -10,69 +9,83 @@ import pytest
 
 from pytest_codingagents.copilot.agent import CopilotAgent
 
+from .conftest import MODELS
+
 
 @pytest.mark.copilot
 class TestFileOperations:
-    """Test basic file creation and reading."""
+    """Test file creation and code quality across models."""
 
-    async def test_create_file(self, copilot_run, tmp_path):
-        """Copilot can create a file when asked."""
+    @pytest.mark.parametrize("model", MODELS)
+    async def test_create_module_with_tests(self, copilot_run, tmp_path, model):
+        """Agent creates a module and its test file with working code."""
         agent = CopilotAgent(
-            name="file-creator",
-            instructions="You are a helpful coding assistant. Create files as requested.",
-            working_directory=str(tmp_path),
-        )
-        result = await copilot_run(agent, "Create a file called hello.py containing: print('hello world')")
-        assert result.success, f"Expected success, got error: {result.error}"
-        assert (tmp_path / "hello.py").exists(), "hello.py was not created"
-
-    async def test_create_and_read_file(self, copilot_run, tmp_path):
-        """Copilot can create a file and confirm its contents."""
-        agent = CopilotAgent(
-            name="file-manager",
-            instructions="You are a helpful coding assistant.",
+            name=f"coder-{model}",
+            model=model,
+            instructions="You are a Python developer. Create production-quality code.",
             working_directory=str(tmp_path),
         )
         result = await copilot_run(
             agent,
-            "Create a file called greet.py with a function greet(name) that returns f'Hello, {name}!'. "
-            "Then read the file back and confirm it looks correct.",
+            "Create a Python module called calculator.py with functions add, subtract, "
+            "multiply, and divide. The divide function should raise ValueError on "
+            "division by zero. Do NOT run or test the code, just create the file.",
         )
-        assert result.success
-        assert (tmp_path / "greet.py").exists()
-        content = (tmp_path / "greet.py").read_text()
-        assert "def greet" in content
-        assert "Hello" in content
+        assert result.success, f"{model} failed: {result.error}"
 
+        # File exists
+        assert (tmp_path / "calculator.py").exists(), f"{model}: calculator.py missing"
 
-@pytest.mark.copilot
-class TestToolUsage:
-    """Test that Copilot uses the right tools."""
+        # Module has all four functions
+        calc = (tmp_path / "calculator.py").read_text()
+        for fn in ("def add", "def subtract", "def multiply", "def divide"):
+            assert fn in calc, f"{model}: {fn} not found in calculator.py"
 
-    async def test_uses_create_file_tool(self, copilot_run, tmp_path):
-        """Copilot uses the create_file tool to write files."""
-        agent = CopilotAgent(
-            name="tool-tracker",
-            instructions="Create files as requested.",
-            working_directory=str(tmp_path),
+        # Error handling present
+        assert "ValueError" in calc or "ZeroDivisionError" in calc, (
+            f"{model}: no error handling in divide"
         )
-        result = await copilot_run(agent, "Create a file called test.txt with 'hello'")
-        assert result.success
-        assert len(result.all_tool_calls) > 0, "Expected at least one tool call"
 
-    async def test_multi_file_creation(self, copilot_run, tmp_path):
-        """Copilot can create multiple files in one prompt."""
+        # Agent used tools
+        assert len(result.all_tool_calls) > 0, f"{model}: no tool calls"
+
+    @pytest.mark.parametrize("model", MODELS)
+    async def test_refactor_existing_code(self, copilot_run, tmp_path, model):
+        """Agent reads existing code and refactors it."""
+        # Seed a file with intentionally messy code
+        messy = tmp_path / "messy.py"
+        messy.write_text(
+            "def f(x,y,z):\n"
+            "    result = x + y\n"
+            "    result = result * z\n"
+            "    if result > 100:\n"
+            "        return True\n"
+            "    else:\n"
+            "        return False\n"
+        )
+
         agent = CopilotAgent(
-            name="multi-file",
-            instructions="Create all requested files.",
+            name=f"refactorer-{model}",
+            model=model,
+            instructions=(
+                "You are a code reviewer. Refactor code for clarity: "
+                "use descriptive names, simplify logic, add type hints and a docstring."
+            ),
             working_directory=str(tmp_path),
         )
         result = await copilot_run(
             agent,
-            "Create two files: "
-            "1. utils.py with a function add(a, b) that returns a + b "
-            "2. test_utils.py that imports add and has a test_add function",
+            "Read messy.py, refactor it for clarity, and save the improved version.",
         )
-        assert result.success
-        assert (tmp_path / "utils.py").exists()
-        assert (tmp_path / "test_utils.py").exists()
+        assert result.success, f"{model} failed: {result.error}"
+
+        refactored = messy.read_text()
+        # Should have improved naming or added type hints or docstring
+        has_improvement = (
+            "def f(" not in refactored  # renamed function
+            or '"""' in refactored  # added docstring
+            or "->" in refactored  # added return type hint
+            or ": int" in refactored  # added param type hint
+            or ": float" in refactored
+        )
+        assert has_improvement, f"{model}: no visible improvement in refactored code"

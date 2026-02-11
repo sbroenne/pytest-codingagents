@@ -10,10 +10,7 @@ import pytest
 
 from pytest_codingagents.copilot.agent import CopilotAgent
 
-MODELS = [
-    "claude-sonnet-4",
-    "gpt-4.1",
-]
+from .conftest import MODELS
 
 
 @pytest.mark.copilot
