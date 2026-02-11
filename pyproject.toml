@@ -87,6 +87,11 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
+addopts = """
+    --aitest-name=pytest-codingagents
+    --aitest-html=aitest-reports/report.html
+    --aitest-summary-model=azure/gpt-5.2-chat
+"""
 markers = [
     "copilot: marks tests as requiring GitHub Copilot SDK credentials",
 ]
