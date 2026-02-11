@@ -9,7 +9,7 @@ DEFAULT_MODEL: str | None = None
 MODELS: list[str] = ["gpt-5.2", "claude-opus-4.5"]
 
 # Timeouts
-DEFAULT_TIMEOUT_S: float = 120.0
+DEFAULT_TIMEOUT_S: float = 300.0
 
 # Turn limits
 DEFAULT_MAX_TURNS: int = 25

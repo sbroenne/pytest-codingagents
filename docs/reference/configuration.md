@@ -9,8 +9,8 @@
 | `instructions` | `str \| None` | `None` | System prompt / instructions |
 | `system_message_mode` | `Literal["append", "replace"]` | `"append"` | `"append"` adds to Copilot's built-in system message; `"replace"` overrides it |
 | `working_directory` | `str \| None` | `None` | Working directory for file operations |
-| `max_turns` | `int` | `25` | Maximum conversation turns |
-| `timeout_s` | `float` | `120.0` | Timeout in seconds |
+| `max_turns` | `int` | `25` | Maximum conversation turns (informational — enforced via `timeout_s`, not in SDK) |
+| `timeout_s` | `float` | `300.0` | Timeout in seconds |
 | `auto_confirm` | `bool` | `True` | Auto-approve tool permissions |
 | `reasoning_effort` | `Literal["low", "medium", "high", "xhigh"] \| None` | `None` | Reasoning effort level |
 | `allowed_tools` | `list[str] \| None` | `None` | Allowlist of tools |

@@ -47,5 +47,6 @@ async def test_create_file(copilot_run, tmp_path):
 ## Next Steps
 
 - [Getting Started](getting-started/index.md) — Install and write your first test
+- [Demo Reports](demo/index.md) — See real HTML reports with AI analysis
 - [API Reference](reference/api.md) — Full API documentation
 - [Contributing](contributing/index.md) — How to contribute

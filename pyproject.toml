@@ -28,7 +28,6 @@ classifiers = [
 dependencies = [
     "pytest>=9.0",
     "github-copilot-sdk>=0.1.23",
-    "azure-identity>=1.25.2",
 ]
 
 [project.optional-dependencies]
@@ -39,7 +38,7 @@ dev = [
     "pre-commit>=4.5",
 ]
 aitest = [
-    "pytest-aitest>=0.2.8",
+    "pytest-aitest>=0.2.9",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -87,11 +86,6 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
-addopts = """
-    --aitest-name=pytest-codingagents
-    --aitest-html=aitest-reports/report.html
-    --aitest-summary-model=azure/gpt-5.2-chat
-"""
 markers = [
     "copilot: marks tests as requiring GitHub Copilot SDK credentials",
 ]

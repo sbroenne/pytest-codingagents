@@ -30,8 +30,10 @@ class TestCLIOperations:
         )
         assert result.success
         assert (tmp_path / "greet.py").exists()
-        # Agent should have used both file creation and terminal
-        assert result.tool_was_called("run_in_terminal")
+        # Agent should have used terminal (may be called run_in_terminal or powershell)
+        assert result.tool_was_called("run_in_terminal") or result.tool_was_called("powershell"), (
+            f"Expected terminal tool, got: {result.tool_names_called}"
+        )
 
     async def test_use_git_cli(self, copilot_run, tmp_path):
         """Agent can use git CLI to initialize a repository."""

@@ -13,7 +13,7 @@ class TestCopilotAgentDefaults:
         assert agent.name == "test"
         assert agent.model is None
         assert agent.max_turns == 25
-        assert agent.timeout_s == 120.0
+        assert agent.timeout_s == 300.0
         assert agent.auto_confirm is True
         assert agent.instructions is None
         assert agent.working_directory is None

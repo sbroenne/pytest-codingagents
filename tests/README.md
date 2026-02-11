@@ -12,11 +12,11 @@ against real coding tasks. Every test uses the actual Copilot API — no mocks.
 | `test_matrix.py` | Model × Instructions grid | `gpt-5.2`, `claude-opus-4.5` | 4 |
 | `test_instructions.py` | System prompt style comparison, constraints | default | 4 |
 | `test_cli_tools.py` | Terminal commands, git, tool exclusion | default | 4 |
-| `test_custom_agents.py` | Custom agent routing, subagent tracking | default | 2 |
+| `test_custom_agents.py` | Custom agent delegation, tool restrictions, subagent tracking | default | 3 |
 | `test_events.py` | Reasoning traces, permissions, usage, events | default | 6 |
 | `test_skills.py` | Skill directories, disabled skills | default | 3 |
 
-**Total: 31 test cases**
+**Total: 32 test cases**
 
 ## Quick Start
 
@@ -75,15 +75,26 @@ Compares instruction variants and constraints.
 
 Verifies agents can operate terminal commands.
 
-- **`test_run_python_script`** — Create and run a Python script; verify `run_in_terminal` called.
+- **`test_run_python_script`** — Create and run a Python script; verify terminal tool called (`run_in_terminal` or `powershell`).
 - **`test_use_git_cli`** — `git init`, `.gitignore`, initial commit.
 - **`test_cli_tool_output_captured`** — Run command, process output, report findings.
 - **`test_no_terminal_when_excluded`** — `excluded_tools=["run_in_terminal"]` prevents usage.
 
-### test_custom_agents.py — Custom Agent / Subagent
+### test_custom_agents.py — Custom Agent Delegation
 
-- **`test_with_custom_agent`** — Agent with `custom_agents` config creates files.
-- **`test_subagent_invocations_tracked`** — `result.subagent_invocations` is populated.
+Uses the SDK's `CustomAgentConfig` (fields: `name`, `prompt`, `description`,
+`display_name`, `tools`, `mcp_servers`, `infer`). Delegation is non-deterministic,
+so tests focus on verifiable outcomes rather than asserting invocation counts.
+
+- **`test_custom_agent_code_and_tests`** — Defines a "test-writer" custom agent
+  and tasks the main agent with creating code + tests. Verifies both `calculator.py`
+  and a `test_*.py` file are produced (searched recursively).
+- **`test_custom_agent_with_restricted_tools`** — Custom agent with `tools` restriction
+  (only `create_file`, `read_file`, `insert_edit_into_file`). Verifies docs-writer
+  produces a README alongside code.
+- **`test_subagent_invocations_captured`** — Creates `sort.py`, verifies it exists
+  (searched recursively), and checks `result.subagent_invocations` structure:
+  always a list, entries have valid `name` and `status`.
 
 ### test_events.py — SDK-Unique Features
 
@@ -107,7 +118,7 @@ Features that only exist in the Copilot SDK, not in generic AI testing.
 ```python
 DEFAULT_MODEL: str | None = None    # Copilot picks its default
 MODELS = ["gpt-5.2", "claude-opus-4.5"]
-DEFAULT_TIMEOUT_S = 120.0
+DEFAULT_TIMEOUT_S = 300.0
 DEFAULT_MAX_TURNS = 25
 ```
 

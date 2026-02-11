@@ -2,6 +2,8 @@
 
 Get HTML reports with AI-powered analysis by integrating with [pytest-aitest](https://github.com/sbroenne/pytest-aitest).
 
+> **See example reports:** [Basic Report](../demo/basic-report.html) · [Model Comparison](../demo/model-comparison-report.html) · [Instruction Testing](../demo/instruction-testing-report.html)
+
 ## Installation
 
 ```bash

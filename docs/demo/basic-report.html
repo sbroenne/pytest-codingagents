@@ -1,0 +1,1380 @@
+<!doctype html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>pytest-aitest - Test Report</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&amp;family=Roboto+Mono&amp;display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script><style>/* ============================================================
+   pytest-aitest Report Styles
+   Hand-written CSS — replaces Tailwind CSS build pipeline
+   Matches mkdocs-material slate/indigo theme
+   ============================================================ */
+
+/* ==================== Design Tokens ==================== */
+:root {
+  /* Primary (Material Indigo) */
+  --color-primary: #4051b5;
+  --color-primary-50: #e8eaf6;
+  --color-primary-100: #c5cae9;
+  --color-primary-200: #9fa8da;
+  --color-primary-300: #7986cb;
+  --color-primary-400: #5c6bc0;
+  --color-primary-500: #4051b5;
+  --color-primary-600: #3949ab;
+  --color-primary-700: #303f9f;
+  --color-primary-800: #283593;
+  --color-primary-900: #1a237e;
+
+  /* Surfaces (Slate dark) */
+  --color-surface: #1e2129;
+  --color-surface-card: #282c34;
+  --color-surface-elevated: #2d323c;
+  --color-surface-code: #1c1f26;
+
+  /* Text */
+  --color-text: #bfc7d5;
+  --color-text-muted: #8b949e;
+  --color-text-light: #c9d1d9;
+
+  /* Accent */
+  --color-accent: #526cfe;
+  --color-accent-hover: #6b7eff;
+
+  /* Semantic colors */
+  --color-green: #4ade80;
+  --color-yellow: #facc15;
+  --color-red: #f87171;
+  --color-blue: #60a5fa;
+
+  /* Shadows (Material Design) */
+  --shadow-material: 0 2px 4px -1px rgba(0,0,0,.2), 0 4px 5px 0 rgba(0,0,0,.14), 0 1px 10px 0 rgba(0,0,0,.12);
+  --shadow-material-lg: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
+
+  /* Border radius */
+  --radius-material: 4px;
+
+  /* Fonts */
+  --font-sans: 'Roboto', system-ui, sans-serif;
+  --font-mono: 'Roboto Mono', monospace;
+}
+
+/* ==================== Preflight Reset ==================== */
+/* Matches Tailwind CSS v3.4 preflight — do NOT remove or simplify */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+::before, ::after {
+  --tw-content: '';
+}
+
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  font-family: var(--font-sans);
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  line-height: inherit;
+}
+
+hr {
+  height: 0;
+  color: inherit;
+  border-top-width: 1px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+b, strong {
+  font-weight: bolder;
+}
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  font-size: 1em;
+}
+
+small {
+  font-size: 80%;
+}
+
+sub, sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+sub { bottom: -0.25em; }
+sup { top: -0.5em; }
+
+table {
+  text-indent: 0;
+  border-color: inherit;
+  border-collapse: collapse;
+}
+
+button, input, optgroup, select, textarea {
+  font-family: inherit;
+  font-feature-settings: inherit;
+  font-variation-settings: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+button, select {
+  text-transform: none;
+}
+
+button,
+input[type="button"],
+input[type="reset"],
+input[type="submit"] {
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none;
+}
+
+:-moz-focusring {
+  outline: auto;
+}
+
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+progress {
+  vertical-align: baseline;
+}
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+[type="search"] {
+  -webkit-appearance: textfield;
+  outline-offset: -2px;
+}
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  font: inherit;
+}
+
+summary {
+  display: list-item;
+}
+
+blockquote, dd, dl, figure, h1, h2, h3, h4, h5, h6, hr, p, pre {
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+ol, ul, menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+dialog {
+  padding: 0;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1;
+  color: var(--color-text-muted);
+}
+
+button, [role="button"] {
+  cursor: pointer;
+}
+
+:disabled {
+  cursor: default;
+}
+
+img, svg, video, canvas, audio, iframe, embed, object {
+  display: block;
+  vertical-align: middle;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+[hidden]:where(:not([hidden="until-found"])) {
+  display: none;
+}
+
+/* ==================== Base Styles ==================== */
+body {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  line-height: 1.625;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-light);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+a {
+  color: var(--color-primary);
+  transition: color 150ms;
+}
+a:hover {
+  color: var(--color-accent);
+}
+
+/* ==================== Layout Utilities ==================== */
+.flex { display: flex; }
+.grid { display: grid; }
+.hidden { display: none; }
+.inline-flex { display: inline-flex; }
+.fixed { position: fixed; }
+.absolute { position: absolute; }
+.inset-0 { inset: 0; }
+
+.flex-1 { flex: 1 1 0%; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.min-w-0 { min-width: 0; }
+
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.gap-x-6 { column-gap: 1.5rem; }
+.gap-y-1 { row-gap: 0.25rem; }
+
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* ==================== Spacing Utilities ==================== */
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 0.75rem; }
+.p-4 { padding: 1rem; }
+.p-5 { padding: 1.25rem; }
+.p-6 { padding: 1.5rem; }
+.p-8 { padding: 2rem; }
+.px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+.px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+.px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+.py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+.py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+.pl-4 { padding-left: 1rem; }
+.pl-5 { padding-left: 1.25rem; }
+.pl-8 { padding-left: 2rem; }
+
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-3 { margin-bottom: 0.75rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-5 { margin-bottom: 1.25rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.ml-2 { margin-left: 0.5rem; }
+.ml-auto { margin-left: auto; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-6 { margin-top: 1.5rem; }
+.mt-8 { margin-top: 2rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.pb-2 { padding-bottom: 0.5rem; }
+
+.space-y-1 > * + * { margin-top: 0.25rem; }
+.space-y-2 > * + * { margin-top: 0.5rem; }
+.space-y-4 > * + * { margin-top: 1rem; }
+
+/* ==================== Sizing ==================== */
+.w-10 { width: 2.5rem; }
+.h-10 { height: 2.5rem; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.min-h-screen { min-height: 100vh; }
+.max-w-none { max-width: none; }
+.max-w-xl { max-width: 36rem; }
+.max-w-6xl { max-width: 72rem; }
+.w-\[90vw\] { width: 90vw; }
+.h-\[85vh\] { height: 85vh; }
+
+/* ==================== Typography ==================== */
+.text-xs { font-size: 0.75rem; line-height: 1rem; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.text-base { font-size: 1rem; line-height: 1.5rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.text-2xl { font-size: 1.5rem; line-height: 2rem; }
+
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-mono { font-family: var(--font-mono); }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+.uppercase { text-transform: uppercase; }
+.italic { font-style: italic; }
+.tracking-tight { letter-spacing: -0.025em; }
+.tracking-wider { letter-spacing: 0.05em; }
+.leading-relaxed { line-height: 1.625; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.line-through { text-decoration: line-through; }
+.underline { text-decoration: underline; }
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.list-disc { list-style-type: disc; }
+
+/* ==================== Text Colors ==================== */
+.text-white { color: #fff; }
+.text-text { color: var(--color-text); }
+.text-text-light { color: var(--color-text-light); }
+.text-text-muted { color: var(--color-text-muted); }
+.text-primary { color: var(--color-primary); }
+.text-primary-300 { color: var(--color-primary-300); }
+.text-accent { color: var(--color-accent); }
+.text-green-400 { color: var(--color-green); }
+.text-yellow-400 { color: var(--color-yellow); }
+.text-red-400 { color: var(--color-red); }
+.text-blue-400 { color: var(--color-blue); }
+
+/* ==================== Background Colors ==================== */
+.bg-surface { background-color: var(--color-surface); }
+.bg-surface-card { background-color: var(--color-surface-card); }
+.bg-surface-elevated { background-color: var(--color-surface-elevated); }
+.bg-surface-code { background-color: var(--color-surface-code); }
+.bg-primary { background-color: var(--color-primary); }
+.bg-primary\/10 { background-color: rgba(64, 81, 181, 0.1); }
+.bg-primary\/15 { background-color: rgba(64, 81, 181, 0.15); }
+.bg-primary\/20 { background-color: rgba(64, 81, 181, 0.2); }
+.bg-green-500\/5 { background-color: rgba(34, 197, 94, 0.05); }
+.bg-green-500\/10 { background-color: rgba(34, 197, 94, 0.1); }
+.bg-green-500\/15 { background-color: rgba(34, 197, 94, 0.15); }
+.bg-red-500\/5 { background-color: rgba(239, 68, 68, 0.05); }
+.bg-red-500\/10 { background-color: rgba(239, 68, 68, 0.1); }
+.bg-red-500\/15 { background-color: rgba(239, 68, 68, 0.15); }
+.bg-yellow-500\/5 { background-color: rgba(234, 179, 8, 0.05); }
+.bg-white\/5 { background-color: rgba(255, 255, 255, 0.05); }
+.bg-white\/10 { background-color: rgba(255, 255, 255, 0.1); }
+.bg-black\/80 { background-color: rgba(0, 0, 0, 0.8); }
+.bg-transparent { background-color: transparent; }
+
+/* ==================== Borders ==================== */
+.border { border-width: 1px; }
+.border-0 { border-width: 0; }
+.border-t { border-top-width: 1px; }
+.border-b { border-bottom-width: 1px; }
+.border-l-4 { border-left-width: 4px; }
+.border-l-\[3px\] { border-left-width: 3px; }
+
+.border-white\/5 { border-color: rgba(255, 255, 255, 0.05); }
+.border-white\/10 { border-color: rgba(255, 255, 255, 0.1); }
+.border-white\/20 { border-color: rgba(255, 255, 255, 0.2); }
+.border-primary { border-color: var(--color-primary); }
+.border-primary\/30 { border-color: rgba(64, 81, 181, 0.3); }
+.border-primary\/50 { border-color: rgba(64, 81, 181, 0.5); }
+.border-green-500 { border-color: #22c55e; }
+.border-green-500\/30 { border-color: rgba(34, 197, 94, 0.3); }
+.border-red-500 { border-color: #ef4444; }
+.border-red-500\/30 { border-color: rgba(239, 68, 68, 0.3); }
+.border-yellow-500\/30 { border-color: rgba(234, 179, 8, 0.3); }
+
+.rounded { border-radius: 0.25rem; }
+.rounded-full { border-radius: 9999px; }
+.rounded-lg { border-radius: 0.5rem; }
+.rounded-material { border-radius: var(--radius-material); }
+
+/* ==================== Effects ==================== */
+.shadow-material { box-shadow: var(--shadow-material); }
+.shadow-material-lg { box-shadow: var(--shadow-material-lg); }
+.opacity-50 { opacity: 0.5; }
+.opacity-70 { opacity: 0.7; }
+.backdrop-blur-sm { backdrop-filter: blur(4px); }
+
+.transition-colors { transition-property: color, background-color, border-color; transition-duration: 150ms; transition-timing-function: ease; }
+.transition-all { transition-property: all; transition-duration: 150ms; transition-timing-function: ease; }
+.transition-transform { transition-property: transform; transition-timing-function: ease; }
+.duration-150 { transition-duration: 150ms; }
+.duration-200 { transition-duration: 200ms; }
+.ease-out { transition-timing-function: ease-out; }
+
+/* ==================== Positioning ==================== */
+.top-4 { top: 1rem; }
+.right-4 { right: 1rem; }
+.z-40 { z-index: 40; }
+.z-50 { z-index: 50; }
+
+/* ==================== Overflow & Cursor ==================== */
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+.overflow-x-auto { overflow-x: auto; }
+.overflow-y-auto { overflow-y: auto; }
+.cursor-pointer { cursor: pointer; }
+
+/* ==================== Misc Utilities ==================== */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0;
+}
+
+/* ==================== Hover States ==================== */
+.hover\:bg-white\/\[0\.02\]:hover { background-color: rgba(255, 255, 255, 0.02); }
+.hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(255, 255, 255, 0.03); }
+.hover\:border-white\/20:hover { border-color: rgba(255, 255, 255, 0.2); }
+.hover\:border-primary\/30:hover { border-color: rgba(64, 81, 181, 0.3); }
+.hover\:border-primary\/50:hover { border-color: rgba(64, 81, 181, 0.5); }
+.hover\:text-text-light:hover { color: var(--color-text-light); }
+.hover\:text-blue-400:hover { color: var(--color-blue); }
+.hover\:text-accent:hover { color: var(--color-accent); }
+.hover\:decoration-accent\/50:hover { text-decoration-color: rgba(82, 108, 254, 0.5); }
+.decoration-primary\/30 { text-decoration-color: rgba(64, 81, 181, 0.3); }
+
+/* ==================== Gradient ==================== */
+.bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-stops)); }
+.from-purple-500\/10 { --tw-gradient-from: rgba(168, 85, 247, 0.1); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent); }
+.via-primary\/10 { --tw-gradient-stops: var(--tw-gradient-from), rgba(64, 81, 181, 0.1), var(--tw-gradient-to, transparent); }
+.to-transparent { --tw-gradient-to: transparent; }
+
+/* ============================================================
+   Component Classes
+   ============================================================ */
+
+/* ==================== Report Header ==================== */
+.report-header {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-material);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-material);
+}
+.report-header h1 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.025em;
+}
+
+/* ==================== Status Badges ==================== */
+.status-passed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(34, 197, 94, 0.15);
+  color: var(--color-green);
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.status-failed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(239, 68, 68, 0.15);
+  color: var(--color-red);
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ==================== Cards ==================== */
+.card {
+  background-color: var(--color-surface-card);
+  border-radius: var(--radius-material);
+  box-shadow: var(--shadow-material);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.card-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 500;
+  color: var(--color-text-light);
+}
+.card-body {
+  padding: 1.25rem;
+}
+
+/* ==================== Section Title ==================== */
+.section-title {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-text-light);
+}
+
+/* ==================== Tool Name ==================== */
+.tool-name {
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+/* ==================== AI Insights ==================== */
+.ai-insights {
+  background-color: var(--color-surface-card);
+  border-radius: var(--radius-material);
+  box-shadow: var(--shadow-material);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 2.5rem;
+  overflow: hidden;
+}
+.ai-insights-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 500;
+  background-image: linear-gradient(to right, rgba(168, 85, 247, 0.1), rgba(64, 81, 181, 0.1), transparent);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-text-light);
+}
+
+/* ==================== Leaderboard Table ==================== */
+.leaderboard-table {
+  width: 100%;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  border-collapse: collapse;
+}
+.leaderboard-table th {
+  padding: 0.75rem 1.25rem;
+  text-align: left;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.05em;
+  background-color: var(--color-surface-elevated);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.leaderboard-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+}
+.leaderboard-table tbody tr {
+  transition: background-color 150ms;
+}
+.leaderboard-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+.winner-row {
+  background-color: rgba(34, 197, 94, 0.05);
+}
+
+/* ==================== Markdown Content ==================== */
+.markdown-content {
+  max-width: none;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+.markdown-content h2 {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.markdown-content h3 {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.markdown-content p {
+  color: var(--color-text);
+  line-height: 1.625;
+  margin-bottom: 1rem;
+}
+.markdown-content ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+.markdown-content ul > li + li { margin-top: 0.375rem; }
+.markdown-content li {
+  color: var(--color-text);
+}
+.markdown-content li::marker {
+  color: var(--color-text-muted);
+}
+.markdown-content code {
+  background-color: var(--color-surface-code);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.markdown-content pre {
+  background-color: var(--color-surface-code);
+  border-radius: var(--radius-material);
+  padding: 1rem;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 1rem;
+}
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-size: inherit;
+}
+.markdown-content strong {
+  color: var(--color-text-light);
+  font-weight: 600;
+}
+.markdown-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-decoration-color: rgba(64, 81, 181, 0.3);
+  transition: color 150ms, text-decoration-color 150ms;
+}
+.markdown-content a:hover {
+  color: var(--color-accent);
+  text-decoration-color: rgba(82, 108, 254, 0.5);
+}
+.markdown-content blockquote {
+  border-left: 4px solid rgba(64, 81, 181, 0.5);
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.markdown-content th,
+.markdown-content td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+.markdown-content th {
+  background-color: var(--color-surface-elevated);
+  font-weight: 500;
+  color: var(--color-text-light);
+}
+
+/* ==================== Agent Selector ==================== */
+.agent-chip {
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-material);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--color-surface-card);
+  transition: all 150ms;
+}
+.agent-chip:hover {
+  border-color: rgba(64, 81, 181, 0.5);
+}
+.agent-chip.selected {
+  border-color: var(--color-primary);
+  background-color: rgba(64, 81, 181, 0.1);
+}
+
+/* ==================== Filter Buttons ==================== */
+.filter-btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--color-text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--color-surface-card);
+  cursor: pointer;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+}
+.filter-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.filter-btn.active {
+  border-color: var(--color-primary);
+  background-color: rgba(64, 81, 181, 0.2);
+  color: var(--color-text-light);
+}
+
+/* ==================== Group / Expand ==================== */
+.test-group.collapsed .group-content { display: none; }
+.test-group.collapsed .expand-icon { transform: rotate(-90deg); }
+.test-row.hidden { display: none; }
+.test-detail.hidden { display: none; }
+
+/* ==================== Overlay ==================== */
+#overlay.active { display: flex !important; }
+#diagram-hover-popup.active { display: block !important; }
+#overlay-mermaid svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  min-height: 60vh;
+}
+</style></head><body class="bg-surface text-text min-h-screen"><div class="max-w-6xl mx-auto px-6 py-8"><header class="report-header mb-8"><div class="flex justify-between items-start gap-4 mb-4"><div class="flex-1"><h1 class="text-2xl font-medium mb-1">Test file creation and code quality across models.</h1></div><div class="status-passed"><span>✓</span><span>All Passed</span></div></div><div class="flex flex-wrap gap-x-6 gap-y-1 py-3 border-t border-white/10 text-sm"><span class="opacity-70">February 11, 2026 at 02:53 PM</span><span>📄 <span class="text-text-light hover:text-blue-400 cursor-pointer" title="tests/test_basic.py">test_basic.py</span></span><span class="tabular-nums">4 tests</span><span class="tabular-nums">61.7s</span><span class="tabular-nums" title="Test execution cost">🧪 $0.4209</span><span class="tabular-nums" title="AI analysis cost">🤖 $0.0262</span><span class="tabular-nums font-semibold" title="Total cost">💰 $0.4471</span></div></header><section class="mb-8"><div class="ai-insights"><div class="ai-insights-header"><span>🤖</span><span>AI Analysis</span><button class="ml-auto text-text-muted hover:text-text-light text-sm" onclick="this.closest(&#39;.ai-insights&#39;).querySelector(&#39;.card-body&#39;).classList.toggle(&#39;hidden&#39;)">Toggle</button></div><div class="card-body"><div class="markdown-content"><h2>🎯 Executive Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Best Configuration</strong></td>
+<td><strong>coder-gpt-5.2 / refactorer-gpt-5.2</strong> 🏆</td>
+</tr>
+<tr>
+<td><strong>Pass Rate</strong></td>
+<td><strong>4/4 tests (100%)</strong></td>
+</tr>
+<tr>
+<td><strong>Total Cost</strong></td>
+<td><strong>$0.447</strong> (gpt-5.2: <strong>$0.126</strong>, claude-opus-4.5: <strong>$0.321</strong>)</td>
+</tr>
+<tr>
+<td><strong>Avg Duration</strong></td>
+<td>gpt-5.2: <strong>16.8s</strong> · claude-opus-4.5: <strong>14.0s</strong></td>
+</tr>
+<tr>
+<td><strong>Recommendation</strong></td>
+<td>🟢 <strong>Deploy gpt-5.2</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verdict:</strong> Both models complete all tasks, but <strong>gpt-5.2 delivers the same correctness at ~60% lower cost</strong>, making it the clear default.</p>
+<h3>Configuration Scorecard</h3>
+<table>
+<thead>
+<tr>
+<th>Agent</th>
+<th>Model</th>
+<th>Pass Rate</th>
+<th>Cost</th>
+<th>Avg Duration</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>coder-gpt-5.2 + refactorer-gpt-5.2</td>
+<td>gpt-5.2</td>
+<td><strong>2/2 (100%)</strong></td>
+<td><strong>$0.126</strong></td>
+<td>16.8s</td>
+<td>🏆 Best</td>
+</tr>
+<tr>
+<td>coder-claude-opus-4.5 + refactorer-claude-opus-4.5</td>
+<td>claude-opus-4.5</td>
+<td><strong>2/2 (100%)</strong></td>
+<td><strong>$0.321</strong></td>
+<td>14.0s</td>
+<td>⚠️ Costly</td>
+</tr>
+</tbody>
+</table>
+<h2>❌ Failure Analysis</h2>
+<h3>Results Matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>gpt-5.2</th>
+<th>claude-opus-4.5</th>
+<th>Failure Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Create calculator module</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Refactor existing code</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>No failures observed.</strong> All agents followed instructions and used appropriate tools.</p>
+<h2>🤖 Model Comparison</h2>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>gpt-5.2</th>
+<th>claude-opus-4.5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>File creation</td>
+<td>✅ Correct</td>
+<td>✅ Correct</td>
+</tr>
+<tr>
+<td>Refactoring quality</td>
+<td>✅ High (backward compatibility preserved)</td>
+<td>✅ High (clean rewrite)</td>
+</tr>
+<tr>
+<td>Tool selection</td>
+<td>✅ Precise</td>
+<td>✅ Precise</td>
+</tr>
+<tr>
+<td>Instruction adherence</td>
+<td>✅ Exact</td>
+<td>✅ Exact</td>
+</tr>
+<tr>
+<td><strong>Cost per test</strong></td>
+<td><strong>~$0.063</strong></td>
+<td><strong>~$0.161</strong></td>
+</tr>
+<tr>
+<td><strong>Avg duration</strong></td>
+<td>16.8s</td>
+<td><strong>14.0s</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>gpt-5.2</h3>
+<blockquote>
+<p><strong>Verdict:</strong> Best balance of correctness and cost; ideal default for coding-agent tests.</p>
+</blockquote>
+<p><strong>Strengths:</strong>
+- Preserved backward compatibility during refactor (<code>f()</code> wrapper)
+- Clean, typed implementations with minimal verbosity
+- Lowest cost tier among passing models</p>
+<p><strong>Weaknesses:</strong>
+- Slightly slower than Claude on refactor task</p>
+<h3>claude-opus-4.5</h3>
+<blockquote>
+<p><strong>Verdict:</strong> High-quality outputs, but <strong>not cost-effective</strong> for these tasks.</p>
+</blockquote>
+<p><strong>Strengths:</strong>
+- Clear docstrings and readable refactors
+- Fast execution on refactoring</p>
+<p><strong>Weaknesses:</strong>
+- ~2.5× higher cost with no quality advantage
+- Removes backward compatibility in refactor (acceptable here, but riskier generally)</p>
+<h2>🔧 Tool Usage</h2>
+<h3>Tool Proficiency Matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>gpt-5.2 Calls</th>
+<th>Claude Calls</th>
+<th>Success</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>report_intent</code></td>
+<td>2</td>
+<td>2</td>
+<td>✅ 4/4</td>
+</tr>
+<tr>
+<td><code>create</code></td>
+<td>1</td>
+<td>1</td>
+<td>✅ 2/2</td>
+</tr>
+<tr>
+<td><code>view</code></td>
+<td>1</td>
+<td>1</td>
+<td>✅ 2/2</td>
+</tr>
+<tr>
+<td><code>edit</code></td>
+<td>1</td>
+<td>1</td>
+<td>✅ 2/2</td>
+</tr>
+</tbody>
+</table>
+<h3>Efficiency Analysis</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Assessment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Avg tools per test</td>
+<td><strong>2.0</strong></td>
+<td>✅ Efficient</td>
+</tr>
+<tr>
+<td>Unnecessary calls</td>
+<td><strong>0</strong></td>
+<td>✅ None</td>
+</tr>
+<tr>
+<td>Failed tool calls</td>
+<td><strong>0</strong></td>
+<td>✅ None</td>
+</tr>
+</tbody>
+</table>
+<h2>💡 Optimizations</h2>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Change</th>
+<th>Expected Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🟡 Recommended</td>
+<td>Standardize refactor instruction to require backward compatibility</td>
+<td>Prevent breaking changes</td>
+</tr>
+<tr>
+<td>🟢 Nice to have</td>
+<td>Remove duplicate assistant confirmations</td>
+<td>Minor token reduction</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Details:</strong></p>
+<ol>
+<li><strong>Recommended: Enforce backward compatibility</strong></li>
+<li>Current: Claude refactor removes original function <code>f</code></li>
+<li>Change:
+     <code>When refactoring, preserve original public functions as wrappers unless explicitly told to remove them.</code></li>
+<li>
+<p>Impact: Safer refactors across codebases; avoids subtle regressions</p>
+</li>
+<li>
+<p><strong>Nice to have: Reduce redundant confirmations</strong></p>
+</li>
+<li>Current: Agents repeat completion messages</li>
+<li>Change:
+     <code>After completing a task, provide a single concise confirmation.</code></li>
+<li>Impact: Slight cost and verbosity reduction</li>
+</ol>
+<blockquote>
+<p><strong>Final Recommendation:</strong> Deploy <strong>gpt-5.2</strong> as the default coding agent; reserve <strong>claude-opus-4.5</strong> only when marginal speed gains justify significantly higher cost.</p>
+</blockquote></div></div></div></section><section class="mb-8"><h2 class="section-title">🏆 Agent Leaderboard</h2><div class="card overflow-hidden"><table class="leaderboard-table"><thead><tr><th class="w-10"></th><th>Agent</th><th class="text-center">Tests</th><th class="text-center">Pass Rate</th><th class="text-right">Tokens</th><th class="text-right">Cost</th><th class="text-right">Duration</th></tr></thead><tbody><tr class="winner-row"><td class="text-center text-xl">🥇</td><td><div class="font-medium text-text-light"><span>coder-gpt-5.2</span></div></td><td class="text-center tabular-nums"><span class="text-green-400">1</span>/<span class="text-text-muted">1</span></td><td class="text-center"><span class="text-green-400 font-semibold tabular-nums">100%</span></td><td class="text-right tabular-nums text-text-muted">0</td><td class="text-right tabular-nums text-text-muted">$0.0393</td><td class="text-right tabular-nums text-text-muted">9.8s</td></tr><tr><td class="text-center text-xl">🥈</td><td><div class="font-medium text-text-light"><span>refactorer-gpt-5.2</span></div></td><td class="text-center tabular-nums"><span class="text-green-400">1</span>/<span class="text-text-muted">1</span></td><td class="text-center"><span class="text-green-400 font-semibold tabular-nums">100%</span></td><td class="text-right tabular-nums text-text-muted">0</td><td class="text-right tabular-nums text-text-muted">$0.0864</td><td class="text-right tabular-nums text-text-muted">23.9s</td></tr><tr><td class="text-center text-xl">🥉</td><td><div class="font-medium text-text-light"><span>coder-claude-opus-4.5</span></div></td><td class="text-center tabular-nums"><span class="text-green-400">1</span>/<span class="text-text-muted">1</span></td><td class="text-center"><span class="text-green-400 font-semibold tabular-nums">100%</span></td><td class="text-right tabular-nums text-text-muted">0</td><td class="text-right tabular-nums text-text-muted">$0.1281</td><td class="text-right tabular-nums text-text-muted">11.2s</td></tr><tr><td class="text-center text-xl">4</td><td><div class="font-medium text-text-light"><span>refactorer-claude-opus-4.5</span></div></td><td class="text-center tabular-nums"><span class="text-green-400">1</span>/<span class="text-text-muted">1</span></td><td class="text-center"><span class="text-green-400 font-semibold tabular-nums">100%</span></td><td class="text-right tabular-nums text-text-muted">0</td><td class="text-right tabular-nums text-text-muted">$0.1934</td><td class="text-right tabular-nums text-text-muted">16.7s</td></tr></tbody></table></div></section><section class="mb-8"><div class="card p-4"><div class="flex items-center gap-3 mb-3"><span class="text-sm text-text-muted">Compare:</span><span class="text-xs text-text-muted opacity-70">(Click to swap agents)</span></div><div class="flex flex-wrap gap-2"><label class="agent-chip selected"><input type="checkbox" name="compare-agent" value="b286d373-8b89-4255-aeed-1f3b165441d1" checked="checked" class="sr-only" onchange="updateAgentComparison(&#39;b286d373-8b89-4255-aeed-1f3b165441d1&#39;)"><span class="truncate">coder-gpt-5.2</span><span class="text-xs text-text-muted tabular-nums">100%</span></label><label class="agent-chip selected"><input type="checkbox" name="compare-agent" value="b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54" checked="checked" class="sr-only" onchange="updateAgentComparison(&#39;b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54&#39;)"><span class="truncate">refactorer-gpt-5.2</span><span class="text-xs text-text-muted tabular-nums">100%</span></label><label class="agent-chip "><input type="checkbox" name="compare-agent" value="b5d96d2d-85df-4a22-87ef-84c71d2a20c7" class="sr-only" onchange="updateAgentComparison(&#39;b5d96d2d-85df-4a22-87ef-84c71d2a20c7&#39;)"><span class="truncate">coder-claude-opus-4.5</span><span class="text-xs text-text-muted tabular-nums">100%</span></label><label class="agent-chip "><input type="checkbox" name="compare-agent" value="cf240681-c299-45d0-9df2-2bb4585ced84" class="sr-only" onchange="updateAgentComparison(&#39;cf240681-c299-45d0-9df2-2bb4585ced84&#39;)"><span class="truncate">refactorer-claude-opus-4.5</span><span class="text-xs text-text-muted tabular-nums">100%</span></label></div></div></section><section class="mb-8"><h2 class="section-title">📋 Test Results</h2><div class="mb-4 flex items-center justify-between"><div class="flex gap-2"><button class="filter-btn active" data-filter="all" onclick="filterTests(&#39;all&#39;)">All</button><button class="filter-btn " data-filter="diff" onclick="filterTests(&#39;diff&#39;)">Differences ⚡</button><button class="filter-btn " data-filter="failed" onclick="filterTests(&#39;failed&#39;)">Failed ❌</button></div><div class="text-sm text-text-muted"><span id="visible-count">4</span> / 4 tests</div></div><div class="space-y-4" id="test-groups"><div class="card overflow-hidden test-group" data-group-type="session"><div class="group-header px-5 py-3 bg-surface-elevated border-b border-white/10 flex justify-between items-center cursor-pointer" onclick="toggleGroup(this.parentElement)"><div class="flex items-center gap-3"><span class="text-lg">🔗</span><span class="font-medium text-text-light">Test file creation and code quality across models.</span><span class="text-sm text-text-muted">(2 tests)</span></div><div class="flex items-center gap-4"><div class="text-sm text-green-400">1/1</div><div class="text-sm text-green-400">1/1</div><span class="text-text-muted transition-transform duration-200 expand-icon">▼</span></div></div><div class="group-content"><div class="test-row border-b border-white/5" data-test-id="test_create_module_with_tests" data-has-diff="false" data-has-failed="false"><div class="px-5 py-3 hover:bg-white/[0.02] cursor-pointer transition-colors" onclick="toggleTestDetail(this.parentElement)"><div class="flex items-center justify-between"><div class="flex items-center gap-3 min-w-0 flex-1"><span class="text-green-400">✅</span><span class="text-text-light truncate">Agent creates a module and its test file with working code.</span></div><div class="flex items-center gap-4 text-sm text-text-muted"><span class="tabular-nums" title="Total tokens across selected agents">Total 0 tok</span><span class="text-text-muted">·</span><span class="tabular-nums" title="Total cost across selected agents">Total $0.0393</span><span class="text-text-muted">·</span><span class="tabular-nums" title="Token difference between selected agents (%difference)">Δ +0%</span><span class="text-text-muted">·</span><span class="tabular-nums" title="Duration difference between selected agents (%difference)">Δ +0%</span><span class="text-text-muted">·</span><span class="tabular-nums" title="Cost difference between selected agents (%difference)">Δ +0%</span></div></div><div class="flex gap-4 mt-2 pl-8"><div class="agent-result-item flex items-center gap-2 text-xs " data-agent-id="b286d373-8b89-4255-aeed-1f3b165441d1"><span class="text-text-muted">coder-gpt-5.2:</span><span class="text-green-400">✅</span><span class="text-text-muted tabular-nums">9.8s</span></div><div class="agent-result-item flex items-center gap-2 text-xs " data-agent-id="b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54"><span class="text-text-muted">refactorer-gpt-5.2:</span><span class="text-text-muted">—</span></div><div class="agent-result-item flex items-center gap-2 text-xs hidden" data-agent-id="b5d96d2d-85df-4a22-87ef-84c71d2a20c7"><span class="text-text-muted">coder-claude-opus-4.5:</span><span class="text-green-400">✅</span><span class="text-text-muted tabular-nums">11.2s</span></div><div class="agent-result-item flex items-center gap-2 text-xs hidden" data-agent-id="cf240681-c299-45d0-9df2-2bb4585ced84"><span class="text-text-muted">refactorer-claude-opus-4.5:</span><span class="text-text-muted">—</span></div></div></div><div class="test-detail hidden border-t border-white/10 bg-surface-elevated"><div class="comparison-grid grid gap-4 p-5" style="grid-template-columns: repeat(2, 1fr);"><div class="comparison-column  border-l-[3px] border-green-500" data-agent-id="b286d373-8b89-4255-aeed-1f3b165441d1"><div class="flex items-center justify-between mb-4"><div class="font-medium text-text-light">coder-gpt-5.2</div><span class="px-2 py-0.5 rounded text-xs font-medium bg-green-500/15 text-green-400">passed</span></div><div class="space-y-2 mb-4"><div class="grid grid-cols-4 gap-2 p-3 bg-surface-elevated rounded-material text-center"><div><div class="text-sm font-medium text-text-light tabular-nums">9.78s</div><div class="text-xs text-text-muted">duration</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">6</div><div class="text-xs text-text-muted">turns</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">2</div><div class="text-xs text-text-muted">tools</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">0</div><div class="text-xs text-text-muted">tokens</div></div></div><div class="grid grid-cols-4 gap-2 p-3 bg-surface-elevated rounded-material text-center"><div><div class="text-sm font-medium text-text-light tabular-nums">$0.0393</div><div class="text-xs text-text-muted">cost</div></div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>📊</span><span>Sequence</span></div><div class="p-3 bg-surface-code rounded-material border border-white/5 cursor-pointer hover:border-primary/30 transition-colors" onclick="event.stopPropagation(); showDiagram(this.dataset.mermaidCode);" data-mermaid-code="sequenceDiagram
+    participant User
+    participant Agent
+    participant Tools
+
+    User-&gt;&gt;Agent: &#34;Create a Python module called calculator.py with functions add, subtract, multip&#34;
+    Agent-&gt;&gt;Tools: &#34;report_intent({&#39;intent&#39;: &#39;Creating calculator module&#39;})&#34;
+    Agent-&gt;&gt;Tools: &#34;create({&#39;path&#39;: &#39;C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)&#34;
+    Agent-&gt;&gt;User: &#34;Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functio&#34;
+    Agent-&gt;&gt;User: &#34;Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functio&#34;"><div class="mermaid text-xs">sequenceDiagram
+    participant User
+    participant Agent
+    participant Tools
+
+    User->>Agent: "Create a Python module called calculator.py with functions add, subtract, multip"
+    Agent->>Tools: "report_intent({'intent': 'Creating calculator module'})"
+    Agent->>Tools: "create({'path': 'C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)"
+    Agent->>User: "Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functio"
+    Agent->>User: "Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functio"</div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>🔧</span><span>Tool Calls</span></div><div class="space-y-1"><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">report_intent</code></div><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">create</code></div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>💬</span><span>Response</span></div><div style="padding: 1rem; background-color: var(--color-surface-elevated); border-radius: 0.5rem; color: var(--color-text); white-space: pre-wrap; word-wrap: break-word; line-height: 1.625;">Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functions; `divide` raises `ValueError` when dividing by zero.</div></div></div><div class="comparison-column  opacity-50" data-agent-id="b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54"><div class="flex items-center justify-between mb-4"><div class="font-medium text-text-light">refactorer-gpt-5.2</div></div><div class="text-center text-text-muted py-8">No result for this agent</div></div><div class="comparison-column hidden border-l-[3px] border-green-500" data-agent-id="b5d96d2d-85df-4a22-87ef-84c71d2a20c7"><div class="flex items-center justify-between mb-4"><div class="font-medium text-text-light">coder-claude-opus-4.5</div><span class="px-2 py-0.5 rounded text-xs font-medium bg-green-500/15 text-green-400">passed</span></div><div class="space-y-2 mb-4"><div class="grid grid-cols-4 gap-2 p-3 bg-surface-elevated rounded-material text-center"><div><div class="text-sm font-medium text-text-light tabular-nums">11.22s</div><div class="text-xs text-text-muted">duration</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">6</div><div class="text-xs text-text-muted">turns</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">2</div><div class="text-xs text-text-muted">tools</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">0</div><div class="text-xs text-text-muted">tokens</div></div></div><div class="grid grid-cols-4 gap-2 p-3 bg-surface-elevated rounded-material text-center"><div><div class="text-sm font-medium text-text-light tabular-nums">$0.1281</div><div class="text-xs text-text-muted">cost</div></div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>📊</span><span>Sequence</span></div><div class="p-3 bg-surface-code rounded-material border border-white/5 cursor-pointer hover:border-primary/30 transition-colors" onclick="event.stopPropagation(); showDiagram(this.dataset.mermaidCode);" data-mermaid-code="sequenceDiagram
+    participant User
+    participant Agent
+    participant Tools
+
+    User-&gt;&gt;Agent: &#34;Create a Python module called calculator.py with functions add, subtract, multip&#34;
+    Agent-&gt;&gt;Tools: &#34;report_intent({&#39;intent&#39;: &#39;Creating calculator module&#39;})&#34;
+    Agent-&gt;&gt;Tools: &#34;create({&#39;path&#39;: &#39;C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)&#34;
+    Agent-&gt;&gt;User: &#34;Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functio&#34;
+    Agent-&gt;&gt;User: &#34;Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functio&#34;"><div class="mermaid text-xs">sequenceDiagram
+    participant User
+    participant Agent
+    participant Tools
+
+    User->>Agent: "Create a Python module called calculator.py with functions add, subtract, multip"
+    Agent->>Tools: "report_intent({'intent': 'Creating calculator module'})"
+    Agent->>Tools: "create({'path': 'C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)"
+    Agent->>User: "Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functio"
+    Agent->>User: "Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functio"</div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>🔧</span><span>Tool Calls</span></div><div class="space-y-1"><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">report_intent</code></div><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">create</code></div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>💬</span><span>Response</span></div><div style="padding: 1rem; background-color: var(--color-surface-elevated); border-radius: 0.5rem; color: var(--color-text); white-space: pre-wrap; word-wrap: break-word; line-height: 1.625;">Created `calculator.py` with `add`, `subtract`, `multiply`, and `divide` functions. The `divide` function raises `ValueError` when attempting to divide by zero.</div></div></div><div class="comparison-column hidden opacity-50" data-agent-id="cf240681-c299-45d0-9df2-2bb4585ced84"><div class="flex items-center justify-between mb-4"><div class="font-medium text-text-light">refactorer-claude-opus-4.5</div></div><div class="text-center text-text-muted py-8">No result for this agent</div></div></div></div></div><div class="test-row border-b border-white/5" data-test-id="test_refactor_existing_code" data-has-diff="false" data-has-failed="false"><div class="px-5 py-3 hover:bg-white/[0.02] cursor-pointer transition-colors" onclick="toggleTestDetail(this.parentElement)"><div class="flex items-center justify-between"><div class="flex items-center gap-3 min-w-0 flex-1"><span class="text-green-400">✅</span><span class="text-text-light truncate">Agent reads existing code and refactors it.</span></div><div class="flex items-center gap-4 text-sm text-text-muted"><span class="tabular-nums" title="Total tokens across selected agents">Total 0 tok</span><span class="text-text-muted">·</span><span class="tabular-nums" title="Total cost across selected agents">Total $0.0864</span><span class="text-text-muted">·</span><span class="tabular-nums" title="Token difference between selected agents (%difference)">Δ +0%</span><span class="text-text-muted">·</span><span class="tabular-nums" title="Duration difference between selected agents (%difference)">Δ +0%</span><span class="text-text-muted">·</span><span class="tabular-nums" title="Cost difference between selected agents (%difference)">Δ +0%</span></div></div><div class="flex gap-4 mt-2 pl-8"><div class="agent-result-item flex items-center gap-2 text-xs " data-agent-id="b286d373-8b89-4255-aeed-1f3b165441d1"><span class="text-text-muted">coder-gpt-5.2:</span><span class="text-text-muted">—</span></div><div class="agent-result-item flex items-center gap-2 text-xs " data-agent-id="b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54"><span class="text-text-muted">refactorer-gpt-5.2:</span><span class="text-green-400">✅</span><span class="text-text-muted tabular-nums">23.9s</span></div><div class="agent-result-item flex items-center gap-2 text-xs hidden" data-agent-id="b5d96d2d-85df-4a22-87ef-84c71d2a20c7"><span class="text-text-muted">coder-claude-opus-4.5:</span><span class="text-text-muted">—</span></div><div class="agent-result-item flex items-center gap-2 text-xs hidden" data-agent-id="cf240681-c299-45d0-9df2-2bb4585ced84"><span class="text-text-muted">refactorer-claude-opus-4.5:</span><span class="text-green-400">✅</span><span class="text-text-muted tabular-nums">16.7s</span></div></div></div><div class="test-detail hidden border-t border-white/10 bg-surface-elevated"><div class="comparison-grid grid gap-4 p-5" style="grid-template-columns: repeat(2, 1fr);"><div class="comparison-column  opacity-50" data-agent-id="b286d373-8b89-4255-aeed-1f3b165441d1"><div class="flex items-center justify-between mb-4"><div class="font-medium text-text-light">coder-gpt-5.2</div></div><div class="text-center text-text-muted py-8">No result for this agent</div></div><div class="comparison-column  border-l-[3px] border-green-500" data-agent-id="b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54"><div class="flex items-center justify-between mb-4"><div class="font-medium text-text-light">refactorer-gpt-5.2</div><span class="px-2 py-0.5 rounded text-xs font-medium bg-green-500/15 text-green-400">passed</span></div><div class="space-y-2 mb-4"><div class="grid grid-cols-4 gap-2 p-3 bg-surface-elevated rounded-material text-center"><div><div class="text-sm font-medium text-text-light tabular-nums">23.91s</div><div class="text-xs text-text-muted">duration</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">10</div><div class="text-xs text-text-muted">turns</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">4</div><div class="text-xs text-text-muted">tools</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">0</div><div class="text-xs text-text-muted">tokens</div></div></div><div class="grid grid-cols-4 gap-2 p-3 bg-surface-elevated rounded-material text-center"><div><div class="text-sm font-medium text-text-light tabular-nums">$0.0864</div><div class="text-xs text-text-muted">cost</div></div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>📊</span><span>Sequence</span></div><div class="p-3 bg-surface-code rounded-material border border-white/5 cursor-pointer hover:border-primary/30 transition-colors" onclick="event.stopPropagation(); showDiagram(this.dataset.mermaidCode);" data-mermaid-code="sequenceDiagram
+    participant User
+    participant Agent
+    participant Tools
+
+    User-&gt;&gt;Agent: &#34;Read messy.py, refactor it for clarity, and save the improved version.&#34;
+    Agent-&gt;&gt;Tools: &#34;report_intent({&#39;intent&#39;: &#39;Refactoring messy.py&#39;})&#34;
+    Agent-&gt;&gt;Tools: &#34;view({&#39;path&#39;: &#39;C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)&#34;
+    Agent-&gt;&gt;Tools: &#34;edit({&#39;path&#39;: &#39;C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)&#34;
+    Agent-&gt;&gt;Tools: &#34;view({&#39;path&#39;: &#39;C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)&#34;
+    Agent-&gt;&gt;User: &#34;I refactored `messy.py` for clarity by introducing a descriptive function name, &#34;
+    Agent-&gt;&gt;User: &#34;I refactored `messy.py` for clarity by introducing a descriptive function name, &#34;"><div class="mermaid text-xs">sequenceDiagram
+    participant User
+    participant Agent
+    participant Tools
+
+    User->>Agent: "Read messy.py, refactor it for clarity, and save the improved version."
+    Agent->>Tools: "report_intent({'intent': 'Refactoring messy.py'})"
+    Agent->>Tools: "view({'path': 'C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)"
+    Agent->>Tools: "edit({'path': 'C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)"
+    Agent->>Tools: "view({'path': 'C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)"
+    Agent->>User: "I refactored `messy.py` for clarity by introducing a descriptive function name, "
+    Agent->>User: "I refactored `messy.py` for clarity by introducing a descriptive function name, "</div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>🔧</span><span>Tool Calls</span></div><div class="space-y-1"><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">report_intent</code></div><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">view</code></div><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">edit</code></div><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">view</code></div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>💬</span><span>Response</span></div><div style="padding: 1rem; background-color: var(--color-surface-elevated); border-radius: 0.5rem; color: var(--color-text); white-space: pre-wrap; word-wrap: break-word; line-height: 1.625;">I refactored `messy.py` for clarity by introducing a descriptive function name, simplifying the boolean logic, and adding type hints plus docstrings while keeping the original `f()` as a backward-compatible wrapper.
+
+Updated `messy.py` is now saved with:
+- `is_scaled_sum_over_threshold(addend1, addend2, multiplier, threshold=100) -&gt; bool`
+- `f(x, y, z) -&gt; bool` delegating to the new function</div></div></div><div class="comparison-column hidden opacity-50" data-agent-id="b5d96d2d-85df-4a22-87ef-84c71d2a20c7"><div class="flex items-center justify-between mb-4"><div class="font-medium text-text-light">coder-claude-opus-4.5</div></div><div class="text-center text-text-muted py-8">No result for this agent</div></div><div class="comparison-column hidden border-l-[3px] border-green-500" data-agent-id="cf240681-c299-45d0-9df2-2bb4585ced84"><div class="flex items-center justify-between mb-4"><div class="font-medium text-text-light">refactorer-claude-opus-4.5</div><span class="px-2 py-0.5 rounded text-xs font-medium bg-green-500/15 text-green-400">passed</span></div><div class="space-y-2 mb-4"><div class="grid grid-cols-4 gap-2 p-3 bg-surface-elevated rounded-material text-center"><div><div class="text-sm font-medium text-text-light tabular-nums">16.75s</div><div class="text-xs text-text-muted">duration</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">8</div><div class="text-xs text-text-muted">turns</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">3</div><div class="text-xs text-text-muted">tools</div></div><div><div class="text-sm font-medium text-text-light tabular-nums">0</div><div class="text-xs text-text-muted">tokens</div></div></div><div class="grid grid-cols-4 gap-2 p-3 bg-surface-elevated rounded-material text-center"><div><div class="text-sm font-medium text-text-light tabular-nums">$0.1934</div><div class="text-xs text-text-muted">cost</div></div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>📊</span><span>Sequence</span></div><div class="p-3 bg-surface-code rounded-material border border-white/5 cursor-pointer hover:border-primary/30 transition-colors" onclick="event.stopPropagation(); showDiagram(this.dataset.mermaidCode);" data-mermaid-code="sequenceDiagram
+    participant User
+    participant Agent
+    participant Tools
+
+    User-&gt;&gt;Agent: &#34;Read messy.py, refactor it for clarity, and save the improved version.&#34;
+    Agent-&gt;&gt;Tools: &#34;report_intent({&#39;intent&#39;: &#39;Refactoring messy.py&#39;})&#34;
+    Agent-&gt;&gt;Tools: &#34;view({&#39;path&#39;: &#39;C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)&#34;
+    Agent-&gt;&gt;Tools: &#34;edit({&#39;path&#39;: &#39;C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)&#34;
+    Agent-&gt;&gt;User: &#34;Refactored `messy.py` with: - **Descriptive name**: `is_product_above_threshold`&#34;
+    Agent-&gt;&gt;User: &#34;Refactored `messy.py` with: - **Descriptive name**: `is_product_above_threshold`&#34;"><div class="mermaid text-xs">sequenceDiagram
+    participant User
+    participant Agent
+    participant Tools
+
+    User->>Agent: "Read messy.py, refactor it for clarity, and save the improved version."
+    Agent->>Tools: "report_intent({'intent': 'Refactoring messy.py'})"
+    Agent->>Tools: "view({'path': 'C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)"
+    Agent->>Tools: "edit({'path': 'C:\\Users\\stbrnner\\AppData\\Local\\Temp\\pytest-)"
+    Agent->>User: "Refactored `messy.py` with: - **Descriptive name**: `is_product_above_threshold`"
+    Agent->>User: "Refactored `messy.py` with: - **Descriptive name**: `is_product_above_threshold`"</div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>🔧</span><span>Tool Calls</span></div><div class="space-y-1"><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">report_intent</code></div><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">view</code></div><div class="flex items-center gap-2 text-sm p-2 rounded bg-green-500/5"><span class="text-green-400">✅</span><code class="tool-name">edit</code></div></div></div><div class="mb-4"><div class="text-sm font-medium text-text-light mb-3 flex items-center gap-2"><span>💬</span><span>Response</span></div><div style="padding: 1rem; background-color: var(--color-surface-elevated); border-radius: 0.5rem; color: var(--color-text); white-space: pre-wrap; word-wrap: break-word; line-height: 1.625;">Refactored `messy.py` with:
+- **Descriptive name**: `is_product_above_threshold` instead of `f`
+- **Clear parameter names**: `addend_a`, `addend_b`, `multiplier` instead of `x`, `y`, `z`
+- **Type hints**: Added `float` inputs and `bool` return type
+- **Docstring**: Documents purpose, args, and return value
+- **Simplified logic**: Combined operations and replaced `if/else` with direct boolean return</div></div></div></div></div></div></div></div></div><style>
+.test-group.collapsed .group-content {
+    display: none;
+}
+.test-group.collapsed .expand-icon {
+    transform: rotate(-90deg);
+}
+.test-row.hidden {
+    display: none;
+}
+.test-detail.hidden {
+    display: none;
+}
+</style></section></div><div id="overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-8" onclick="hideOverlay()"><button class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-2xl text-text-muted hover:text-text-light bg-surface-card rounded-full border border-white/10 transition-colors" onclick="hideOverlay()">✕</button><div class="w-[90vw] h-[85vh] overflow-auto bg-surface-card rounded-lg p-6 shadow-material-lg flex items-center justify-center" onclick="event.stopPropagation()"><div class="mermaid w-full h-full" id="overlay-mermaid"></div></div></div><div id="diagram-hover-popup" class="fixed z-40 bg-surface-card rounded-lg shadow-material-lg border border-white/10 p-4 hidden max-w-xl" onmouseenter="keepDiagramHover()" onmouseleave="hideDiagramHover()" onclick="hideOverlay(); this.classList.add(&#39;hidden&#39;); showDiagram(document.getElementById(&#39;hover-mermaid&#39;).innerHTML);"><div class="mermaid" id="hover-mermaid"></div></div><style>
+#overlay.active { display: flex !important; }
+#diagram-hover-popup.active { display: block !important; }
+
+/* Scale the mermaid SVG in overlay to fill available space */
+#overlay-mermaid svg {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    min-height: 60vh;
+}
+</style><script>
+// pytest-aitest Report Scripts
+
+// Initialize Mermaid with dark theme
+mermaid.initialize({ 
+    startOnLoad: true,
+    theme: 'dark',
+    securityLevel: 'loose',
+    themeVariables: {
+        primaryColor: '#4051b5',
+        primaryTextColor: '#c9d1d9',
+        primaryBorderColor: '#4051b5',
+        lineColor: '#8b949e',
+        secondaryColor: '#282c34',
+        tertiaryColor: '#1e2129',
+        background: '#282c34',
+        mainBkg: '#282c34',
+        noteBkgColor: '#2d333b',
+        noteTextColor: '#c9d1d9',
+        actorTextColor: '#c9d1d9',
+        actorBkg: '#2d323c',
+        actorBorder: '#4051b5',
+        signalColor: '#c9d1d9',
+        signalTextColor: '#c9d1d9',
+    }
+});
+
+// Copy to clipboard for suggestions
+function copyToClipboard(button, text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = button.textContent;
+        button.textContent = '✓ Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        button.textContent = '❌ Error';
+        setTimeout(() => {
+            button.textContent = '📋 Copy';
+        }, 2000);
+    });
+}
+
+// Fullscreen diagram viewer
+function showDiagram(mermaidCode) {
+    const overlay = document.getElementById('overlay');
+    const content = document.getElementById('overlay-mermaid');
+    
+    // Set the raw mermaid code as text content (not innerHTML to avoid escaping issues)
+    content.textContent = mermaidCode;
+    
+    // Remove any previous rendering attributes
+    content.removeAttribute('data-processed');
+    
+    overlay.classList.add('active');
+    
+    // Run mermaid on this element
+    mermaid.run({ nodes: [content] }).catch(err => {
+        console.error('Mermaid render error:', err);
+        // Show the raw code if rendering fails
+        content.textContent = 'Error rendering diagram:\n' + mermaidCode;
+    });
+}
+
+function hideOverlay() {
+    document.getElementById('overlay').classList.remove('active');
+}
+
+// Close overlay on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideOverlay();
+});
+
+// Hover popup for side-by-side diagrams
+let hoverTimeout = null;
+function showDiagramHover(element, mermaidCode) {
+    clearTimeout(hoverTimeout);
+    const popup = document.getElementById('diagram-hover-popup');
+    const content = document.getElementById('hover-mermaid');
+    content.innerHTML = mermaidCode;
+    popup.classList.add('active');
+    mermaid.run({ nodes: [content] });
+}
+
+function hideDiagramHover() {
+    hoverTimeout = setTimeout(() => {
+        document.getElementById('diagram-hover-popup').classList.remove('active');
+    }, 100);
+}
+
+function keepDiagramHover() {
+    clearTimeout(hoverTimeout);
+}
+
+// Side-by-side test selector
+function showSideBySideTest(testId) {
+    // Hide all groups
+    document.querySelectorAll('.side-by-side-group').forEach(group => {
+        group.classList.remove('active');
+    });
+    // Show selected group
+    const selected = document.getElementById(testId);
+    if (selected) {
+        selected.classList.add('active');
+        // Re-render mermaid diagrams in the newly visible group
+        mermaid.run({ nodes: selected.querySelectorAll('.mermaid') });
+    }
+}
+
+
+// All agent data for client-side filtering
+const allAgents = [{"id": "b286d373-8b89-4255-aeed-1f3b165441d1", "name": "coder-gpt-5.2", "pass_rate": 100.0}, {"id": "b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54", "name": "refactorer-gpt-5.2", "pass_rate": 100.0}, {"id": "b5d96d2d-85df-4a22-87ef-84c71d2a20c7", "name": "coder-claude-opus-4.5", "pass_rate": 100.0}, {"id": "cf240681-c299-45d0-9df2-2bb4585ced84", "name": "refactorer-claude-opus-4.5", "pass_rate": 100.0}];
+const allAgentsById = {"b286d373-8b89-4255-aeed-1f3b165441d1": {"id": "b286d373-8b89-4255-aeed-1f3b165441d1", "name": "coder-gpt-5.2"}, "b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54": {"id": "b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54", "name": "refactorer-gpt-5.2"}, "b5d96d2d-85df-4a22-87ef-84c71d2a20c7": {"id": "b5d96d2d-85df-4a22-87ef-84c71d2a20c7", "name": "coder-claude-opus-4.5"}, "cf240681-c299-45d0-9df2-2bb4585ced84": {"id": "cf240681-c299-45d0-9df2-2bb4585ced84", "name": "refactorer-claude-opus-4.5"}};
+
+// Track selected agents (exactly 2)
+let selectedAgentIds = ["b286d373-8b89-4255-aeed-1f3b165441d1", "b2dd32ec-7840-4cbe-8502-fa2cbb5b7b54"];
+
+// Agent comparison logic - always keep exactly 2 selected
+function updateAgentComparison(clickedAgentId) {
+    const checkboxes = document.querySelectorAll('input[name="compare-agent"]');
+    
+    // If clicking an already-selected agent, do nothing (keep 2 selected)
+    if (selectedAgentIds.includes(clickedAgentId)) {
+        // Re-check it to prevent unchecking
+        checkboxes.forEach(cb => {
+            if (cb.value === clickedAgentId) {
+                cb.checked = true;
+            }
+        });
+        return;
+    }
+    
+    // Replace the oldest selection with the new one
+    selectedAgentIds.shift();  // Remove first (oldest)
+    selectedAgentIds.push(clickedAgentId);  // Add new one
+    
+    // Update all checkboxes to match selectedAgentIds
+    checkboxes.forEach(cb => {
+        cb.checked = selectedAgentIds.includes(cb.value);
+        cb.closest('.agent-chip').classList.toggle('selected', cb.checked);
+    });
+    
+    // Update visible columns in test comparison
+    document.querySelectorAll('.comparison-column').forEach(col => {
+        const agentId = col.dataset.agentId;
+        if (agentId) {
+            const shouldShow = selectedAgentIds.includes(agentId);
+            col.classList.toggle('hidden', !shouldShow);
+            
+            // Render mermaid diagrams in newly visible columns
+            if (shouldShow) {
+                const diagrams = col.querySelectorAll('.mermaid:not([data-processed])');
+                if (diagrams.length > 0) {
+                    mermaid.run({ nodes: diagrams });
+                }
+            }
+        }
+    });
+    
+    // Update comparison grid layout based on visible columns
+    document.querySelectorAll('.comparison-grid').forEach(grid => {
+        const visibleCols = grid.querySelectorAll('.comparison-column:not(.hidden)').length;
+        grid.style.gridTemplateColumns = `repeat(${visibleCols}, 1fr)`;
+    });
+    
+    // Update agent cards visibility
+    document.querySelectorAll('.agent-card[data-card-id]').forEach(card => {
+        const agentId = card.dataset.cardId;
+        card.classList.toggle('hidden', !selectedAgentIds.includes(agentId));
+    });
+    
+    // Update comparison row agent results
+    document.querySelectorAll('.agent-result-item').forEach(item => {
+        const agentId = item.dataset.agentId;
+        item.classList.toggle('hidden', !selectedAgentIds.includes(agentId));
+    });
+    
+    console.log('Selected agents:', selectedAgentIds);
+}
+
+// Test filtering
+function filterTests(filter) {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+    
+    let visibleCount = 0;
+    document.querySelectorAll('.test-row').forEach(row => {
+        let show = true;
+        if (filter === 'diff') {
+            show = row.dataset.hasDiff === 'true';
+        } else if (filter === 'failed') {
+            show = row.dataset.hasFailed === 'true';
+        }
+        row.classList.toggle('hidden', !show);
+        if (show) visibleCount++;
+    });
+    
+    document.getElementById('visible-count').textContent = visibleCount;
+}
+
+// Group toggle
+function toggleGroup(group) {
+    group.classList.toggle('collapsed');
+}
+
+// Test detail toggle - also renders mermaid diagrams when expanded
+function toggleTestDetail(row) {
+    const detail = row.querySelector('.test-detail');
+    const wasHidden = detail.classList.contains('hidden');
+    detail.classList.toggle('hidden');
+    
+    // If we're showing the detail, render any mermaid diagrams
+    if (wasHidden) {
+        const diagrams = detail.querySelectorAll('.mermaid:not([data-processed])');
+        if (diagrams.length > 0) {
+            mermaid.run({ nodes: diagrams });
+        }
+    }
+}
+
+// Initialize on page load - process visible mermaid diagrams
+document.addEventListener('DOMContentLoaded', () => {
+    // Mermaid should auto-process with startOnLoad, but just in case
+    const visibleDiagrams = document.querySelectorAll('.mermaid:not(.hidden .mermaid)');
+    if (visibleDiagrams.length > 0) {
+        mermaid.run({ nodes: visibleDiagrams });
+    }
+});
+</script></body></html>

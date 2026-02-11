@@ -26,11 +26,11 @@ class TestAnalysisPromptHook:
         result = pytest_aitest_analysis_prompt(config=None)
         assert result is not None
         for section in [
-            "Recommendation",
+            "Executive Summary",
             "Failure Analysis",
-            "Model Assessment",
-            "Instruction Feedback",
-            "Tool Usage Analysis",
+            "Model Comparison",
+            "Instruction Effectiveness",
+            "Tool Usage",
         ]:
             assert section in result, f"Missing section: {section}"
 

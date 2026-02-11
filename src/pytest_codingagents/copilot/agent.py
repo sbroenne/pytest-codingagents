@@ -60,7 +60,7 @@ class CopilotAgent:
 
     # Limits — enforced by the runner, NOT part of SDK SessionConfig
     max_turns: int = 25
-    timeout_s: float = 120.0
+    timeout_s: float = 300.0
 
     # Permissions — auto-approve by default for deterministic testing
     auto_confirm: bool = True
@@ -68,7 +68,8 @@ class CopilotAgent:
     # MCP servers to attach to the session
     mcp_servers: dict[str, Any] = field(default_factory=dict)
 
-    # Custom sub-agents
+    # Custom sub-agents (SDK CustomAgentConfig: name, prompt, description,
+    # display_name, tools, mcp_servers, infer)
     custom_agents: list[dict[str, Any]] = field(default_factory=list)
 
     # Skill directories

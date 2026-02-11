@@ -16,6 +16,9 @@ uv run pytest tests/unit/ -v
 
 # Integration tests (requires Copilot CLI + auth)
 uv run pytest tests/ -v -m copilot
+
+# Per-file reports (generates one HTML report per test file)
+uv run python scripts/run_all.py
 ```
 
 ## Code Quality

@@ -229,7 +229,6 @@ async def test_git_operations(copilot_run, tmp_path):
         "Initialize a git repo, create a .gitignore for Python, and make an initial commit.",
     )
     assert result.success
-    assert result.tool_was_called("run_in_terminal")
     assert (tmp_path / ".git").is_dir()
 ```
 
@@ -252,6 +251,8 @@ agent = CopilotAgent(
 ```
 
 ### pytest-aitest Integration
+
+> **See it in action:** [Basic Report](https://sbroenne.github.io/pytest-codingagents/demo/basic-report.html) · [Model Comparison](https://sbroenne.github.io/pytest-codingagents/demo/model-comparison-report.html) · [Instruction Testing](https://sbroenne.github.io/pytest-codingagents/demo/instruction-testing-report.html)
 
 Install with the `aitest` extra to get HTML reports with AI analysis:
 
@@ -295,7 +296,7 @@ addopts = """
 | `allowed_tools` | `list[str] \| None` | `None` | Allowlist of tools (None = all) |
 | `excluded_tools` | `list[str] \| None` | `None` | Blocklist of tools |
 | `max_turns` | `int` | `25` | Maximum conversation turns (informational — enforced via `timeout_s`, not in SDK) |
-| `timeout_s` | `float` | `120.0` | Timeout in seconds |
+| `timeout_s` | `float` | `300.0` | Timeout in seconds |
 | `auto_confirm` | `bool` | `True` | Auto-approve tool permissions |
 | `mcp_servers` | `dict[str, Any]` | `{}` | MCP server configurations |
 | `custom_agents` | `list[dict[str, Any]]` | `[]` | Custom sub-agent configurations |
