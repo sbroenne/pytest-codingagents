@@ -319,7 +319,7 @@ addopts = """
 | `subagent_invocations` | `list[SubagentInvocation]` | Subagent delegations |
 | `permission_requested` | `bool` | Whether any permissions were requested |
 | `permissions` | `list[dict]` | Permission requests made during execution |
-| `raw_events` | `list[dict]` | All raw SDK events (for debugging) |
+| `raw_events` | `list[Any]` | All raw SDK events (for debugging) |
 
 #### Properties
 

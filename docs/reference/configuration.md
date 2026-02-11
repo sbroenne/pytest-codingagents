@@ -12,7 +12,7 @@
 | `max_turns` | `int` | `25` | Maximum conversation turns |
 | `timeout_s` | `float` | `120.0` | Timeout in seconds |
 | `auto_confirm` | `bool` | `True` | Auto-approve tool permissions |
-| `reasoning_effort` | `str \| None` | `None` | Reasoning effort (`low`, `medium`, `high`, `xhigh`) |
+| `reasoning_effort` | `Literal["low", "medium", "high", "xhigh"] \| None` | `None` | Reasoning effort level |
 | `allowed_tools` | `list[str] \| None` | `None` | Allowlist of tools |
 | `excluded_tools` | `list[str] \| None` | `None` | Blocklist of tools |
 | `mcp_servers` | `dict` | `{}` | MCP server configurations |

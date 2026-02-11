@@ -15,3 +15,7 @@
 ::: pytest_codingagents.copilot.result.UsageInfo
     options:
       show_source: false
+
+::: pytest_codingagents.copilot.result.SubagentInvocation
+    options:
+      show_source: false
