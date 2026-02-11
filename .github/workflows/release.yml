@@ -188,3 +188,14 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(needs.version.outputs.tag, 'alpha') || contains(needs.version.outputs.tag, 'beta') || contains(needs.version.outputs.tag, 'rc') }}
+
+  deploy-docs:
+    name: Deploy Documentation
+    needs: [version, publish-pypi]
+    uses: ./.github/workflows/docs.yml
+    with:
+      version: ${{ needs.version.outputs.tag }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

@@ -42,3 +42,6 @@ Thumbs.db
 # Type checking
 .pyright/
 .mypy_cache/
+
+# Documentation build
+site/

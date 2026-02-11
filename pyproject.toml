@@ -40,6 +40,13 @@ dev = [
 aitest = [
     "pytest-aitest>=0.2",
 ]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.7",
+    "mkdocstrings[python]>=0.24",
+    "pillow>=11.0",
+    "cairosvg>=2.7",
+]
 
 [project.entry-points.pytest11]
 codingagents = "pytest_codingagents.plugin"
@@ -85,5 +92,5 @@ markers = [
 
 [dependency-groups]
 dev = [
-    "pytest-codingagents[dev,aitest]",
+    "pytest-codingagents[dev,aitest,docs]",
 ]
