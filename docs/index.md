@@ -2,18 +2,18 @@
 
 A pytest plugin for testing coding agents via their native SDKs.
 
-**The agent is the test harness, not the thing being tested.** You write prompts, the agent executes them against your codebase, and the report tells you what to fix.
+You give a coding agent a task. Did it pick the right tools? Did it produce working code? Did it follow your instructions? **pytest-codingagents lets you answer these questions with automated tests.**
 
 ## Why?
 
-Your MCP server passes all unit tests. Then a coding agent tries to use it and:
+You're rolling out GitHub Copilot to your team. But which model actually works best for your codebase? Do your custom instructions improve output quality? Does the agent use your MCP tools correctly?
 
-- Picks the wrong tool
-- Passes garbage parameters
-- Can't recover from errors
-- Ignores your system prompt instructions
+You can't answer these questions by trying things manually. You need **repeatable, automated tests** that:
 
-**Why?** Because you tested the code, not the AI interface.
+- Run the real agent against real tasks
+- Assert on tool usage, file creation, and response quality
+- Compare models and instructions side-by-side
+- Track token costs and performance over time
 
 ## Quick Start
 
