@@ -24,16 +24,15 @@ uv add pytest-codingagents
 ```python
 from pytest_codingagents import CopilotAgent
 
-agent = CopilotAgent(
-    name="file-creator",
-    instructions="Create files as requested.",
-    working_directory=str(tmp_path),
-)
-
 
 async def test_create_file(copilot_run, tmp_path):
+    agent = CopilotAgent(
+        instructions="Create files as requested.",
+        working_directory=str(tmp_path),
+    )
     result = await copilot_run(agent, "Create hello.py with print('hello')")
     assert result.success
+    assert result.tool_was_called("create_file")
     assert (tmp_path / "hello.py").exists()
 ```
 
