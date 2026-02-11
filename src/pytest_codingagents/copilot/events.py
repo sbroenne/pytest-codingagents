@@ -151,12 +151,13 @@ class EventMapper:
             self._current_assistant_content.append(content)
 
         # Check for tool_requests in the message
+        # SDK returns ToolRequest dataclass objects, not dicts
         tool_requests = _get_data_field(event, "tool_requests", None)
         if tool_requests:
             for req in tool_requests:
-                call_id = req.get("id", "")
-                name = req.get("name", "unknown")
-                arguments = req.get("arguments", {})
+                call_id = getattr(req, "tool_call_id", "") or ""
+                name = getattr(req, "name", "unknown")
+                arguments = getattr(req, "arguments", {})
                 if isinstance(arguments, str):
                     import json
 
@@ -164,7 +165,7 @@ class EventMapper:
                         arguments = json.loads(arguments)
                     except json.JSONDecodeError:
                         arguments = {"raw": arguments}
-                tc = ToolCall(name=name, arguments=arguments, tool_call_id=call_id)
+                tc = ToolCall(name=name, arguments=arguments or {}, tool_call_id=call_id)
                 self._pending_tool_calls[call_id] = tc
                 self._current_tool_calls.append(tc)
 
@@ -207,14 +208,16 @@ class EventMapper:
         """Handle token usage report."""
         model = _get_data_field(event, "model", "unknown")
         self._model_used = model
+        input_tokens = int(_get_data_field(event, "input_tokens", 0) or 0)
+        output_tokens = int(_get_data_field(event, "output_tokens", 0) or 0)
         self._usage.append(
             UsageInfo(
                 model=model,
-                input_tokens=_get_data_field(event, "input_tokens", 0),
-                output_tokens=_get_data_field(event, "output_tokens", 0),
-                cache_read_tokens=_get_data_field(event, "cache_read_tokens", 0),
-                cost_usd=_get_data_field(event, "cost", 0.0),
-                duration_ms=_get_data_field(event, "duration", 0.0),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cache_read_tokens=int(_get_data_field(event, "cache_read_tokens", 0) or 0),
+                cost_usd=_compute_cost(model, input_tokens, output_tokens),
+                duration_ms=_get_data_field(event, "duration", 0.0) or 0.0,
             )
         )
 
@@ -335,11 +338,13 @@ class EventMapper:
     def _handle_permission(self, event: SessionEvent) -> None:
         """Handle permission request."""
         self._permission_requested = True
-        self._permissions.append({
-            "type": _get_data_field(event, "permission_type", "unknown"),
-            "tool": _get_data_field(event, "tool_name", None),
-            "message": _get_data_field(event, "message", ""),
-        })
+        self._permissions.append(
+            {
+                "type": _get_data_field(event, "permission_type", "unknown"),
+                "tool": _get_data_field(event, "tool_name", None),
+                "message": _get_data_field(event, "message", ""),
+            }
+        )
 
     # ── Internal helpers ──
 
@@ -361,6 +366,60 @@ class EventMapper:
 def _get_data_field(event: SessionEvent, field: str, default: Any = None) -> Any:
     """Safely get a field from event.data (which has ~90 optional fields)."""
     return getattr(event.data, field, default)
+
+
+def _compute_cost(model: str, input_tokens: int, output_tokens: int) -> float:
+    """Compute cost in USD from token counts using litellm pricing data.
+
+    The Copilot SDK's ``data.cost`` field uses an unknown unit that does NOT
+    correspond to USD, so we compute cost ourselves from token counts.
+
+    Looks up per-token pricing from litellm's ``model_cost`` map, trying
+    common model-name variants (e.g. ``claude-opus-4.5`` → ``claude-opus-4-5``).
+
+    Returns 0.0 if no pricing data is found for the model.
+    """
+    if input_tokens == 0 and output_tokens == 0:
+        return 0.0
+    try:
+        from litellm import model_cost
+
+        info = _lookup_model_cost(model, model_cost)
+        if info is None:
+            return 0.0
+
+        input_rate = info.get("input_cost_per_token", 0.0) or 0.0
+        output_rate = info.get("output_cost_per_token", 0.0) or 0.0
+        return input_tokens * input_rate + output_tokens * output_rate
+    except Exception:
+        return 0.0
+
+
+def _lookup_model_cost(model: str, cost_map: dict[str, Any]) -> dict[str, Any] | None:
+    """Find model pricing in litellm's cost map, trying name variants.
+
+    The Copilot SDK may return model names that don't exactly match
+    litellm's keys (e.g. ``claude-opus-4.5`` vs ``claude-opus-4-5``).
+    """
+    import re
+
+    # Direct match
+    if model in cost_map:
+        return cost_map[model]
+
+    # Try azure/ prefix (SDK returns bare names, litellm often uses azure/ keys)
+    if f"azure/{model}" in cost_map:
+        return cost_map[f"azure/{model}"]
+
+    # Normalize Claude dot-notation: claude-opus-4.5 → claude-opus-4-5
+    normalized = re.sub(r"(\d+)\.(\d+)", r"\1-\2", model)
+    if normalized != model:
+        if normalized in cost_map:
+            return cost_map[normalized]
+        if f"azure_ai/{normalized}" in cost_map:
+            return cost_map[f"azure_ai/{normalized}"]
+
+    return None
 
 
 # ── Event type → handler dispatch table ──

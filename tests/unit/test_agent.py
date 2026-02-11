@@ -65,9 +65,12 @@ class TestBuildSessionConfig:
         )
         config = agent.build_session_config()
         assert config["model"] == "claude-sonnet-4"
-        assert config["reasoningEffort"] == "high"
-        assert config["instructions"] == "Be helpful"
-        assert config["maxTurns"] == 10
+        assert config["reasoning_effort"] == "high"
+        assert config["system_message"] == {"mode": "append", "content": "Be helpful"}
+        assert "maxTurns" not in config  # max_turns is NOT part of SDK SessionConfig
+        assert config["available_tools"] == ["create_file"]
+        assert config["excluded_tools"] == ["run_in_terminal"]
+        assert config["working_directory"] == "/tmp/test"
 
     def test_mcp_servers_included(self):
         agent = CopilotAgent(
@@ -77,8 +80,25 @@ class TestBuildSessionConfig:
             },
         )
         config = agent.build_session_config()
-        assert "mcpServers" in config
-        assert len(config["mcpServers"]) == 1
+        assert "mcp_servers" in config
+        assert len(config["mcp_servers"]) == 1
+
+    def test_system_message_replace_mode(self):
+        agent = CopilotAgent(
+            name="replace",
+            instructions="Custom system message",
+            system_message_mode="replace",
+        )
+        config = agent.build_session_config()
+        assert config["system_message"] == {
+            "mode": "replace",
+            "content": "Custom system message",
+        }
+
+    def test_no_system_message_without_instructions(self):
+        agent = CopilotAgent(name="no-instructions")
+        config = agent.build_session_config()
+        assert "system_message" not in config
 
     def test_extra_config_merged(self):
         agent = CopilotAgent(

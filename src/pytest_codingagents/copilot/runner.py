@@ -123,6 +123,14 @@ async def run_copilot(agent: CopilotAgent, prompt: str) -> CopilotResult:
     return mapper.build()
 
 
-def _auto_approve_handler(request: dict) -> dict:
-    """Auto-approve all permission requests for deterministic testing."""
-    return {"result": "allow"}
+def _auto_approve_handler(request: dict, context: dict[str, str]) -> dict:
+    """Auto-approve all permission requests for deterministic testing.
+
+    Args:
+        request: PermissionRequest TypedDict with kind, toolCallId, etc.
+        context: Additional context from the SDK.
+
+    Returns:
+        PermissionRequestResult with kind="approved".
+    """
+    return {"kind": "approved"}
