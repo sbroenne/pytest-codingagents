@@ -38,7 +38,9 @@ Pre-commit hooks run automatically on `git commit`.
 ```
 src/pytest_codingagents/
 ├── __init__.py              # Public API exports
-├── plugin.py                # pytest plugin entry point
+├── plugin.py                # pytest plugin entry point + analysis prompt hook
+├── prompts/
+│   └── coding_agent_analysis.md  # AI analysis prompt template
 └── copilot/
     ├── __init__.py          # Copilot subpackage exports
     ├── agent.py             # CopilotAgent dataclass

@@ -7,6 +7,7 @@
 | `name` | `str` | `"copilot"` | Agent identifier for reports |
 | `model` | `str \| None` | `None` | Model to use (e.g., `claude-sonnet-4`) |
 | `instructions` | `str \| None` | `None` | System prompt / instructions |
+| `system_message_mode` | `Literal["append", "replace"]` | `"append"` | `"append"` adds to Copilot's built-in system message; `"replace"` overrides it |
 | `working_directory` | `str \| None` | `None` | Working directory for file operations |
 | `max_turns` | `int` | `25` | Maximum conversation turns |
 | `timeout_s` | `float` | `120.0` | Timeout in seconds |

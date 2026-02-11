@@ -6,14 +6,16 @@ You give a coding agent a task. Did it pick the right tools? Did it produce work
 
 ## Why?
 
-You're rolling out GitHub Copilot to your team. But which model actually works best for your codebase? Do your custom instructions improve output quality? Does the agent use your MCP tools correctly?
+You're rolling out GitHub Copilot to your team. But which model works best for your codebase? Do your custom instructions improve quality? Does the agent use your MCP servers correctly? Can it operate your CLI tools? Do your custom agents and skills actually help?
 
-You can't answer these questions by trying things manually. You need **repeatable, automated tests** that:
+You can't answer these questions by trying things manually. You need **repeatable, automated tests** that evaluate:
 
-- Run the real agent against real tasks
-- Assert on tool usage, file creation, and response quality
-- Compare models and instructions side-by-side
-- Track token costs and performance over time
+- **Instructions** — Do your system prompts produce the desired behavior?
+- **MCP Servers** — Can the agent discover and use your custom tools?
+- **CLI Tools** — Can the agent operate command-line interfaces correctly?
+- **Custom Agents** — Do your sub-agents handle delegated tasks?
+- **Skills** — Does domain knowledge improve agent performance?
+- **Models** — Which model works best for your use case and budget?
 
 ## Quick Start
 

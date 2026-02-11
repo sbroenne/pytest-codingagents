@@ -13,8 +13,9 @@ uv add "pytest-codingagents[aitest]"
 When `pytest-aitest` is installed, `CopilotResult` automatically bridges to `AgentResult`, enabling:
 
 - **HTML reports** with test results, tool call details, and Mermaid sequence diagrams
-- **AI analysis** with failure root causes and improvement suggestions
+- **AI analysis** with failure root causes and improvement suggestions tailored for coding agents
 - **Agent leaderboards** when comparing models or instructions
+- **Dynamic pricing** — model costs pulled live from litellm for accurate cost analysis
 
 ## Usage
 
