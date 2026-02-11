@@ -16,6 +16,9 @@ uv run pytest tests/unit/ -v
 
 # Integration tests (requires Copilot CLI + auth)
 uv run pytest tests/ -v -m copilot
+
+# Per-file reports (generates one HTML report per test file)
+uv run python scripts/run_all.py
 ```
 
 ## Code Quality
@@ -38,7 +41,9 @@ Pre-commit hooks run automatically on `git commit`.
 ```
 src/pytest_codingagents/
 ├── __init__.py              # Public API exports
-├── plugin.py                # pytest plugin entry point
+├── plugin.py                # pytest plugin entry point + analysis prompt hook
+├── prompts/
+│   └── coding_agent_analysis.md  # AI analysis prompt template
 └── copilot/
     ├── __init__.py          # Copilot subpackage exports
     ├── agent.py             # CopilotAgent dataclass

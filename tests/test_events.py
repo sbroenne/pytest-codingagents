@@ -29,9 +29,9 @@ class TestReasoningTraces:
         )
         result = await copilot_run(
             agent,
-            "Create a binary search function in search.py. Consider edge cases.",
+            "Create a file called search.py with a binary_search(arr, target) function.",
         )
-        assert result.success
+        assert result.success, f"Failed: {result.error}"
         # Reasoning traces may or may not be present depending on the model
         assert isinstance(result.reasoning_traces, list)
 

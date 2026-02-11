@@ -9,7 +9,7 @@ import pytest
 
 from pytest_codingagents.copilot.agent import CopilotAgent
 
-MODELS = ["claude-sonnet-4", "gpt-4.1"]
+from .conftest import MODELS
 
 INSTRUCTIONS = {
     "minimal": "Create files as requested. No explanations.",

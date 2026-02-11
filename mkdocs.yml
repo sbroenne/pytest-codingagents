@@ -69,6 +69,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Demo Reports: demo/index.md
   - Getting Started:
     - Overview: getting-started/index.md
     - Model Comparison: getting-started/model-comparison.md

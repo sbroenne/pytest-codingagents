@@ -78,6 +78,6 @@ class TestInstructionConstraints:
             "Create a simple REST API with a GET /health endpoint that returns {status: 'ok'}.",
         )
         assert result.success
-        assert (tmp_path / "main.py").exists() or any(
-            f.suffix == ".py" for f in tmp_path.iterdir()
-        ), "Expected at least one Python file"
+        # Agent may create files in tmp_path or subdirectories
+        py_files = list(tmp_path.rglob("*.py"))
+        assert len(py_files) > 0, "Expected at least one Python file"
