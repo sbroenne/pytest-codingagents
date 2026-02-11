@@ -1,0 +1,53 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_filter:
+        description: 'Test filter (-k pattern, e.g. "test_basic" or leave empty for all)'
+        required: false
+        type: string
+
+jobs:
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    environment: integration
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Verify Copilot CLI is available
+        run: uv run python -c "from copilot.client import _get_bundled_cli_path; print(f'CLI: {_get_bundled_cli_path()}')"
+
+      - name: Run integration tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ inputs.test_filter }}" ]; then
+            uv run pytest tests/ -k "${{ inputs.test_filter }}" -v --tb=short --timeout=300
+          else
+            uv run pytest tests/ -v --tb=short --timeout=300
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            aitest-reports/
+          retention-days: 30

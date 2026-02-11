@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING
+import os
+from typing import TYPE_CHECKING, Any, cast
 
 from copilot import CopilotClient
 
@@ -22,6 +23,7 @@ from pytest_codingagents.copilot.events import EventMapper
 
 if TYPE_CHECKING:
     from copilot import CopilotSession, SessionEvent
+    from copilot.types import CopilotClientOptions
 
     from pytest_codingagents.copilot.agent import CopilotAgent
     from pytest_codingagents.copilot.result import CopilotResult
@@ -36,6 +38,10 @@ async def run_copilot(agent: CopilotAgent, prompt: str) -> CopilotResult:
     lifecycle: client start → session creation → prompt execution → event
     capture → client cleanup.
 
+    Authentication is resolved in this order:
+    1. ``GITHUB_TOKEN`` environment variable (ideal for CI)
+    2. Logged-in user via ``gh`` CLI / OAuth (local development)
+
     Args:
         agent: CopilotAgent configuration.
         prompt: The prompt to send to Copilot.
@@ -47,13 +53,19 @@ async def run_copilot(agent: CopilotAgent, prompt: str) -> CopilotResult:
         TimeoutError: If the prompt takes longer than agent.timeout_s.
         RuntimeError: If the Copilot CLI fails to start.
     """
-    client = CopilotClient(
-        options={
-            "cwd": agent.working_directory or ".",
-            "auto_start": True,
-            "log_level": "warning",
-        }
-    )
+    client_options: dict[str, Any] = {
+        "cwd": agent.working_directory or ".",
+        "auto_start": True,
+        "log_level": "warning",
+    }
+
+    # Pass GITHUB_TOKEN from environment for CI authentication
+    github_token = os.environ.get("GITHUB_TOKEN")
+    if github_token:
+        client_options["github_token"] = github_token
+        logger.info("Using GITHUB_TOKEN from environment for authentication")
+
+    client = CopilotClient(options=cast("CopilotClientOptions", client_options))
 
     mapper = EventMapper()
 
