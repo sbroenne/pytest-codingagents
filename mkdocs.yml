@@ -1,5 +1,5 @@
 site_name: pytest-codingagents
-site_description: "A pytest plugin for testing coding agents via their native SDKs. The agent is the test harness, not the thing being tested."
+site_description: "A pytest plugin for testing coding agent configurations — instructions, skills, custom agents, and models — against real tasks."
 site_url: https://sbroenne.github.io/pytest-codingagents
 site_author: sbroenne
 repo_url: https://github.com/sbroenne/pytest-codingagents
@@ -76,8 +76,8 @@ nav:
     - Instruction Testing: getting-started/instruction-testing.md
   - How-To Guides:
     - Overview: how-to/index.md
-    - MCP Server Testing: how-to/mcp-servers.md
     - Skill Testing: how-to/skills.md
+    - MCP Server Testing: how-to/mcp-servers.md
     - CLI Tool Testing: how-to/cli-tools.md
     - Tool Control: how-to/tool-control.md
     - pytest-aitest Integration: how-to/aitest-integration.md

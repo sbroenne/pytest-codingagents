@@ -51,7 +51,7 @@ Every test run produces an HTML report with AI-powered insights:
 - **Diagnoses failures** — root cause analysis with suggested fixes
 - **Compares models** — leaderboards ranked by pass rate and cost
 - **Evaluates instructions** — which instructions produce better results
-- **Recommends improvements** — actionable changes to tools, prompts, and skills
+- **Recommends improvements** — actionable changes to tools, instructions, and skills
 
 ```bash
 uv run pytest tests/ --aitest-html=report.html --aitest-summary-model=azure/gpt-5.2-chat
