@@ -1,18 +1,18 @@
-"""Custom agent / subagent tests.
+"""Custom agent tests.
 
-Tests Copilot's custom agent routing and subagent invocation.
+Tests Copilot's custom agent routing and invocation.
 
-Custom agents (SDK ``CustomAgentConfig``) are specialized sub-agents defined
-in the session config. The main agent can delegate tasks to them.
+Custom agents (SDK ``CustomAgentConfig``) are specialized agents defined
+in the session config. The main agent can invoke them for specific tasks.
 
 Key fields:
     name (str): Unique agent name (required)
-    prompt (str): The agent's system prompt (required)
-    description (str): What the agent does — helps model decide when to delegate
+    prompt (str): The agent's instructions (required)
+    description (str): What the agent does — helps model decide when to invoke it
     tools (list[str]): Tools the agent can use (optional)
     mcp_servers (dict): MCP servers specific to this agent (optional)
 
-Note: Delegation is non-deterministic — the LLM decides whether to invoke the
+Note: Invocation is non-deterministic — the LLM decides whether to invoke the
 custom agent. Tests focus on verifiable outcomes rather than asserting
 subagent invocation counts.
 """
@@ -26,7 +26,7 @@ from pytest_codingagents.copilot.agent import CopilotAgent
 
 @pytest.mark.copilot
 class TestCustomAgents:
-    """Test custom agent configurations and delegation."""
+    """Test custom agent configurations."""
 
     async def test_custom_agent_code_and_tests(self, copilot_run, tmp_path):
         """Custom test-writer agent produces tests alongside code.
@@ -39,7 +39,7 @@ class TestCustomAgents:
             name="with-test-writer",
             instructions=(
                 "You are a senior developer. When you create code, "
-                "always have tests written for it. Delegate test writing "
+                "always have tests written for it. Use the test-writer "
                 "to the test-writer agent when available."
             ),
             working_directory=str(tmp_path),
@@ -78,7 +78,7 @@ class TestCustomAgents:
         """
         agent = CopilotAgent(
             name="with-docs-writer",
-            instructions="You are a project lead. Create code and delegate documentation tasks.",
+            instructions="You are a project lead. Create code and have documentation written.",
             working_directory=str(tmp_path),
             custom_agents=[
                 {
@@ -105,13 +105,13 @@ class TestCustomAgents:
     async def test_subagent_invocations_captured(self, copilot_run, tmp_path):
         """Subagent events are captured in result.subagent_invocations.
 
-        Even if the model doesn't delegate, the field should be present
-        and correctly typed. If it does delegate, we should see entries.
+        Even if the model doesn't use the custom agent, the field should be present
+        and correctly typed. If it does, we should see entries.
         """
         agent = CopilotAgent(
-            name="delegation-test",
+            name="custom-agent-test",
             instructions=(
-                "You manage a team. Always delegate code review to the "
+                "You manage a team. Always have the reviewer agent check "
                 "reviewer agent before finalizing."
             ),
             working_directory=str(tmp_path),
@@ -134,7 +134,7 @@ class TestCustomAgents:
         sort_files = list(tmp_path.rglob("sort.py"))
         assert len(sort_files) > 0, "sort.py was not created"
 
-        # subagent_invocations is always a list (may be empty if model didn't delegate)
+        # subagent_invocations is always a list (may be empty if model didn't use custom agent)
         assert isinstance(result.subagent_invocations, list)
 
         # If any subagent was invoked, verify the structure

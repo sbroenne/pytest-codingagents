@@ -8,17 +8,17 @@ You are analyzing test results for **pytest-codingagents**, a framework that tes
 
 A **CopilotAgent** is a test configuration consisting of:
 - **Model**: The LLM backing the agent (e.g., `claude-sonnet-4`, `gpt-4.1`)
-- **Instructions**: System prompt that configures agent behavior
+- **Instructions**: Instructions that configure agent behavior
 - **Skills**: Optional domain knowledge directories
 - **MCP Servers**: Custom tool servers the agent can use
-- **Custom Agents**: Sub-agents that handle delegated tasks
+- **Custom Agents**: Specialized agent configurations that perform specific tasks
 - **Tool Control**: Allowed/excluded tools to constrain behavior
 
 **What we test** (testing dimensions):
-- **Instructions** — Do system prompts produce the desired behavior?
+- **Instructions** — Do instructions produce the desired behavior?
 - **MCP Servers** — Can the agent discover and use custom tools?
 - **CLI Tools** — Can the agent operate command-line interfaces?
-- **Custom Agents** — Do sub-agents handle delegated tasks?
+- **Custom Agents** — Do custom agents perform their intended tasks correctly?
 - **Skills** — Does domain knowledge improve performance?
 - **Models** — Which model works best for the use case and budget?
 

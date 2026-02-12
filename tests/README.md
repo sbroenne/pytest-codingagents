@@ -10,9 +10,9 @@ against real coding tasks. Every test uses the actual Copilot API — no mocks.
 | `test_basic.py` | File creation, code quality, refactoring | `gpt-5.2`, `claude-opus-4.5` | 4 |
 | `test_models.py` | Model comparison on identical tasks | `gpt-5.2`, `claude-opus-4.5` | 4 |
 | `test_matrix.py` | Model × Instructions grid | `gpt-5.2`, `claude-opus-4.5` | 4 |
-| `test_instructions.py` | System prompt style comparison, constraints | default | 4 |
+| `test_instructions.py` | Instruction style comparison, constraints | default | 4 |
 | `test_cli_tools.py` | Terminal commands, git, tool exclusion | default | 4 |
-| `test_custom_agents.py` | Custom agent delegation, tool restrictions, subagent tracking | default | 3 |
+| `test_custom_agents.py` | Custom agent configs, tool restrictions, subagent tracking | default | 3 |
 | `test_events.py` | Reasoning traces, permissions, usage, events | default | 6 |
 | `test_skills.py` | Skill directories, disabled skills | default | 3 |
 
@@ -62,7 +62,7 @@ Cross-product of 2 models × 2 instruction styles (minimal, detailed).
 - **`test_create_utility`** — Create `string_utils.py` with `reverse`,
   `capitalize_words`, `count_vowels`. Every combination must produce working code.
 
-### test_instructions.py — System Prompt Testing
+### test_instructions.py — Instruction Testing
 
 Compares instruction variants and constraints.
 
@@ -80,10 +80,10 @@ Verifies agents can operate terminal commands.
 - **`test_cli_tool_output_captured`** — Run command, process output, report findings.
 - **`test_no_terminal_when_excluded`** — `excluded_tools=["run_in_terminal"]` prevents usage.
 
-### test_custom_agents.py — Custom Agent Delegation
+### test_custom_agents.py — Custom Agent Testing
 
 Uses the SDK's `CustomAgentConfig` (fields: `name`, `prompt`, `description`,
-`display_name`, `tools`, `mcp_servers`, `infer`). Delegation is non-deterministic,
+`display_name`, `tools`, `mcp_servers`, `infer`). Invocation is non-deterministic,
 so tests focus on verifiable outcomes rather than asserting invocation counts.
 
 - **`test_custom_agent_code_and_tests`** — Defines a "test-writer" custom agent

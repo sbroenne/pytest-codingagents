@@ -40,4 +40,4 @@ async def test_hello_world(copilot_run, tmp_path):
 ## What's Next
 
 - [Model Comparison](model-comparison.md) — Compare different models
-- [Instruction Testing](instruction-testing.md) — Test different system prompts
+- [Instruction Testing](instruction-testing.md) — Test different instructions
