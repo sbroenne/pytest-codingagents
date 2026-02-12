@@ -76,6 +76,10 @@ nav:
     - Instruction Testing: getting-started/instruction-testing.md
   - How-To Guides:
     - Overview: how-to/index.md
+    - MCP Server Testing: how-to/mcp-servers.md
+    - Skill Testing: how-to/skills.md
+    - CLI Tool Testing: how-to/cli-tools.md
+    - Tool Control: how-to/tool-control.md
     - pytest-aitest Integration: how-to/aitest-integration.md
     - CI/CD Integration: how-to/ci-cd.md
   - Reference:

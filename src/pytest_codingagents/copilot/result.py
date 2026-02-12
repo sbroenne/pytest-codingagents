@@ -25,7 +25,7 @@ class ToolCall:
 
 @dataclass(slots=True)
 class SubagentInvocation:
-    """A subagent delegation observed during execution."""
+    """A subagent invocation observed during execution."""
 
     name: str
     status: str  # "selected", "started", "completed", "failed"
@@ -90,7 +90,7 @@ class CopilotResult:
     # Reasoning traces (from assistant.reasoning events)
     reasoning_traces: list[str] = field(default_factory=list)
 
-    # Subagent delegations
+    # Subagent invocations
     subagent_invocations: list[SubagentInvocation] = field(default_factory=list)
 
     # Permission requests (True if any were requested)

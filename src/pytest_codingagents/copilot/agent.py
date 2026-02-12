@@ -68,7 +68,7 @@ class CopilotAgent:
     # MCP servers to attach to the session
     mcp_servers: dict[str, Any] = field(default_factory=dict)
 
-    # Custom sub-agents (SDK CustomAgentConfig: name, prompt, description,
+    # Custom agents (SDK CustomAgentConfig: name, prompt, description,
     # display_name, tools, mcp_servers, infer)
     custom_agents: list[dict[str, Any]] = field(default_factory=list)
 

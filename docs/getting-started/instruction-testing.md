@@ -1,6 +1,6 @@
 # Instruction Testing
 
-Test how different system prompts affect agent behavior.
+Test how different instructions affect agent behavior.
 
 ## Example
 
@@ -31,5 +31,5 @@ async def test_coding_style(copilot_run, tmp_path, style, instructions):
 ## What To Look For
 
 - **Do instructions change behavior?** Compare output files across styles.
-- **Token efficiency** — Verbose prompts may cost more but produce better results.
+- **Token efficiency** — Verbose instructions may cost more but produce better results.
 - **Tool patterns** — Does TDD-style actually write tests first?

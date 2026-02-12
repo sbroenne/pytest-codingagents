@@ -1,4 +1,4 @@
-"""System prompt / instructions testing.
+"""Instruction testing.
 
 Tests that different instructions produce different agent behaviors.
 Use pytest.mark.parametrize to compare instruction variants.

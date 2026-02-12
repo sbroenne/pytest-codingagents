@@ -1,31 +1,9 @@
 # pytest-codingagents
 
-A pytest plugin for testing coding agents via their native SDKs.
-
-You give a coding agent a task. Did it pick the right tools? Did it produce working code? Did it follow your instructions? **pytest-codingagents lets you answer these questions with automated tests.**
-
-## Why?
-
-You're rolling out GitHub Copilot to your team. But which model works best for your codebase? Do your custom instructions improve quality? Does the agent use your MCP servers correctly? Can it operate your CLI tools? Do your custom agents and skills actually help?
-
-You can't answer these questions by trying things manually. You need **repeatable, automated tests** that evaluate:
-
-- **Instructions** — Do your system prompts produce the desired behavior?
-- **MCP Servers** — Can the agent discover and use your custom tools?
-- **CLI Tools** — Can the agent operate command-line interfaces correctly?
-- **Custom Agents** — Do your sub-agents handle delegated tasks?
-- **Skills** — Does domain knowledge improve agent performance?
-- **Models** — Which model works best for your use case and budget?
-
-## Quick Start
-
-```bash
-uv add pytest-codingagents
-```
+Automated testing for GitHub Copilot configurations. Test your instructions, MCP servers, skills, and models — then get AI analysis that tells you **why** things failed and **what to fix**.
 
 ```python
 from pytest_codingagents import CopilotAgent
-
 
 async def test_create_file(copilot_run, tmp_path):
     agent = CopilotAgent(
@@ -35,18 +13,45 @@ async def test_create_file(copilot_run, tmp_path):
     result = await copilot_run(agent, "Create hello.py with print('hello')")
     assert result.success
     assert result.tool_was_called("create_file")
-    assert (tmp_path / "hello.py").exists()
 ```
 
-## Supported Agents
+## Install
 
-| Agent | SDK | Status |
-|-------|-----|--------|
-| GitHub Copilot | `github-copilot-sdk` | :white_check_mark: Implemented |
+```bash
+uv add pytest-codingagents
+```
+
+Authenticate via `GITHUB_TOKEN` env var (CI) or `gh auth status` (local).
+
+## What You Can Test
+
+| Capability | What it proves | Guide |
+|---|---|---|
+| **Instructions** | Custom instructions produce the desired behavior | [Getting Started](getting-started/index.md) |
+| **Models** | Which model works best for your use case and budget | [Model Comparison](getting-started/model-comparison.md) |
+| **MCP Servers** | The agent discovers and uses your custom tools | [MCP Server Testing](how-to/mcp-servers.md) |
+| **Skills** | Domain knowledge improves agent performance | [Skill Testing](how-to/skills.md) |
+| **CLI Tools** | The agent operates command-line interfaces correctly | [CLI Tool Testing](how-to/cli-tools.md) |
+| **Tool Control** | Allowlists and blocklists restrict tool usage | [Tool Control](how-to/tool-control.md) |
+
+## AI Analysis
+
+> **See it in action:** [Basic Report](demo/basic-report.html) · [Model Comparison](demo/model-comparison-report.html) · [Instruction Testing](demo/instruction-testing-report.html)
+
+Every test run produces an HTML report with AI-powered insights:
+
+- **Diagnoses failures** — root cause analysis with suggested fixes
+- **Compares models** — leaderboards ranked by pass rate and cost
+- **Evaluates instructions** — which instructions produce better results
+- **Recommends improvements** — actionable changes to tools, prompts, and skills
+
+```bash
+uv run pytest tests/ --aitest-html=report.html --aitest-summary-model=azure/gpt-5.2-chat
+```
 
 ## Next Steps
 
 - [Getting Started](getting-started/index.md) — Install and write your first test
+- [How-To Guides](how-to/index.md) — MCP servers, skills, CLI tools, and more
 - [Demo Reports](demo/index.md) — See real HTML reports with AI analysis
 - [API Reference](reference/api.md) — Full API documentation
-- [Contributing](contributing/index.md) — How to contribute
