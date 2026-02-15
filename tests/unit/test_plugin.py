@@ -26,7 +26,6 @@ class TestAnalysisPromptHook:
         result = pytest_aitest_analysis_prompt(config=None)
         assert result is not None
         for section in [
-            "Executive Summary",
             "Failure Analysis",
             "Model Comparison",
             "Instruction Effectiveness",

@@ -38,6 +38,10 @@ async def run_copilot(agent: CopilotAgent, prompt: str) -> CopilotResult:
     lifecycle: client start → session creation → prompt execution → event
     capture → client cleanup.
 
+    Retries on transient SDK errors (fetch failed, model list errors) up to
+    ``agent.max_retries`` times with ``agent.retry_delay_s`` delay between
+    attempts.
+
     Authentication is resolved in this order:
     1. ``GITHUB_TOKEN`` environment variable (ideal for CI)
     2. Logged-in user via ``gh`` CLI / OAuth (local development)
@@ -53,6 +57,51 @@ async def run_copilot(agent: CopilotAgent, prompt: str) -> CopilotResult:
         TimeoutError: If the prompt takes longer than agent.timeout_s.
         RuntimeError: If the Copilot CLI fails to start.
     """
+    last_result: CopilotResult | None = None
+
+    for attempt in range(1, agent.max_retries + 2):  # +2: 1 initial + max_retries
+        result = await _run_copilot_once(agent, prompt)
+        result.agent = agent  # Back-reference for automated report stashing
+
+        if result.success or not _is_transient_error(result.error):
+            return result
+
+        last_result = result
+
+        if attempt <= agent.max_retries:
+            logger.warning(
+                "Transient error on attempt %d/%d: %s — retrying in %ss",
+                attempt,
+                agent.max_retries + 1,
+                result.error,
+                agent.retry_delay_s,
+            )
+            await asyncio.sleep(agent.retry_delay_s)
+
+    # All retries exhausted — return last result
+    return cast("CopilotResult", last_result)
+
+
+_TRANSIENT_PATTERNS = (
+    "fetch failed",
+    "Failed to list models",
+    "ECONNREFUSED",
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "socket hang up",
+    "SDK TimeoutError",
+)
+
+
+def _is_transient_error(error: str | None) -> bool:
+    """Check if an error message matches a known transient SDK pattern."""
+    if not error:
+        return False
+    return any(pattern in error for pattern in _TRANSIENT_PATTERNS)
+
+
+async def _run_copilot_once(agent: CopilotAgent, prompt: str) -> CopilotResult:
+    """Execute a single attempt of a prompt against GitHub Copilot."""
     client_options: dict[str, Any] = {
         "cwd": agent.working_directory or ".",
         "auto_start": True,
@@ -68,9 +117,11 @@ async def run_copilot(agent: CopilotAgent, prompt: str) -> CopilotResult:
     client = CopilotClient(options=cast("CopilotClientOptions", client_options))
 
     mapper = EventMapper()
+    _start = asyncio.get_event_loop().time()
 
     try:
-        await client.start()
+        # Hard timeout on startup — CLI must start within 60s.
+        await asyncio.wait_for(client.start(), timeout=60)
         logger.info("Copilot CLI started")
 
         # Build session config from agent
@@ -80,15 +131,21 @@ async def run_copilot(agent: CopilotAgent, prompt: str) -> CopilotResult:
         if agent.auto_confirm:
             session_config["on_permission_request"] = _auto_approve_handler
 
-        session: CopilotSession = await client.create_session(session_config)  # type: ignore[arg-type]
+        # Hard timeout on session creation — 30s is generous.
+        session: CopilotSession = await asyncio.wait_for(
+            client.create_session(session_config),  # type: ignore[arg-type]
+            timeout=30,
+        )
         logger.info("Session created: %s", session.session_id)
 
         # Register event listener — captures ALL events
         session.on(mapper.handle)
 
-        # Send prompt and wait for completion
+        # Send prompt and wait for completion.
+        # Pass timeout to both send_and_wait (SDK-internal idle wait)
+        # and asyncio.wait_for (hard outer limit).
         result_event: SessionEvent | None = await asyncio.wait_for(
-            session.send_and_wait({"prompt": prompt}),
+            session.send_and_wait({"prompt": prompt}, timeout=agent.timeout_s),
             timeout=agent.timeout_s,
         )
 
@@ -99,11 +156,18 @@ async def run_copilot(agent: CopilotAgent, prompt: str) -> CopilotResult:
         logger.info("Prompt execution complete")
 
     except TimeoutError:
-        logger.error("Prompt execution timed out after %ss", agent.timeout_s)
-        # Build partial result from events captured so far
+        elapsed = asyncio.get_event_loop().time() - _start
+        # Distinguish our asyncio.wait_for timeout from SDK-internal timeouts.
+        # If elapsed is within 90% of timeout_s, it's likely our timeout.
+        # Otherwise, the SDK raised TimeoutError internally.
+        if elapsed >= agent.timeout_s * 0.9:
+            msg = f"Timeout after {agent.timeout_s}s"
+        else:
+            msg = f"SDK TimeoutError after {elapsed:.0f}s (limit was {agent.timeout_s}s)"
+        logger.error("Prompt execution timed out: %s", msg)
         result = mapper.build()
         result.success = False
-        result.error = f"Timeout after {agent.timeout_s}s"
+        result.error = msg
         return result
 
     except Exception as exc:

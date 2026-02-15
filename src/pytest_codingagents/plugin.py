@@ -1,17 +1,22 @@
 """pytest-codingagents plugin registration.
 
 Registered as a pytest plugin via the ``pytest11`` entry point in
-pyproject.toml. Provides the ``copilot_run`` fixture and ``copilot`` marker.
+pyproject.toml. Provides the ``copilot_run`` fixture, ``copilot`` marker,
+and automatic pytest-aitest report integration.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 # Re-export the fixture so pytest discovers it via the plugin entry point.
 from pytest_codingagents.copilot.fixtures import copilot_run
+
+if TYPE_CHECKING:
+    from _pytest.nodes import Item
 
 __all__ = ["copilot_run"]
 
@@ -27,6 +32,33 @@ def pytest_configure(config: object) -> None:
         "markers",
         "copilot: mark test as requiring GitHub Copilot SDK credentials",
     )
+
+
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item: Item, call: Any) -> Any:
+    """Auto-stash CopilotResult for pytest-aitest reporting.
+
+    Detects CopilotResult in test funcargs and stashes it on the pytest
+    node BEFORE pytest-aitest's collector reads it. This enables reporting
+    for tests that call ``run_copilot()`` directly instead of using the
+    ``copilot_run`` fixture — critical for module-scoped agent fixtures
+    that cannot use the function-scoped ``copilot_run``.
+
+    Skips tests that already have ``_aitest_result`` (e.g. stashed by the
+    ``copilot_run`` fixture) to avoid double-processing.
+    """
+    if call.when == "call" and not hasattr(item, "_aitest_result"):
+        from pytest_codingagents.copilot.result import CopilotResult
+
+        funcargs = getattr(item, "funcargs", {})
+        for val in funcargs.values():
+            if isinstance(val, CopilotResult) and val.agent is not None:
+                from pytest_codingagents.copilot.fixtures import stash_on_item
+
+                stash_on_item(item, val.agent, val)
+                break
+
+    yield
 
 
 @pytest.hookimpl(optionalhook=True)

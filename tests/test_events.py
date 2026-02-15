@@ -80,9 +80,9 @@ class TestUsageTracking:
         result = await copilot_run(agent, "Create hi.py with print('hi')")
         assert result.success
         usage = result.token_usage
-        assert "prompt_tokens" in usage
-        assert "completion_tokens" in usage
-        assert "total_tokens" in usage
+        assert "prompt" in usage
+        assert "completion" in usage
+        assert "total" in usage
 
 
 @pytest.mark.copilot

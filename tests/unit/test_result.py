@@ -90,9 +90,9 @@ class TestUsageTracking:
             ],
         )
         d = result.token_usage
-        assert d["prompt_tokens"] == 100
-        assert d["completion_tokens"] == 50
-        assert d["total_tokens"] == 150
+        assert d["prompt"] == 100
+        assert d["completion"] == 50
+        assert d["total"] == 150
 
     def test_cost_usd_alias(self):
         result = CopilotResult(

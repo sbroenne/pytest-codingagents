@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pytest_codingagents.copilot.agent import CopilotAgent
 
 
 @dataclass(slots=True)
@@ -103,6 +106,12 @@ class CopilotResult:
     # Raw SDK events for advanced inspection
     raw_events: list[Any] = field(default_factory=list)
 
+    # Back-reference to the agent that produced this result.
+    # Set automatically by run_copilot() so the plugin hook can
+    # stash results for pytest-aitest without requiring the
+    # copilot_run fixture.
+    agent: CopilotAgent | None = field(default=None, repr=False)
+
     @property
     def final_response(self) -> str | None:
         """Get the last assistant response."""
@@ -163,11 +172,15 @@ class CopilotResult:
 
     @property
     def token_usage(self) -> dict[str, int]:
-        """Token usage dict compatible with pytest-aitest's AgentResult."""
+        """Token usage dict compatible with pytest-aitest's AgentResult.
+
+        Keys use short names (``prompt``, ``completion``, ``total``) to match
+        the format pytest-aitest reads in its collector and generator.
+        """
         return {
-            "prompt_tokens": self.total_input_tokens,
-            "completion_tokens": self.total_output_tokens,
-            "total_tokens": self.total_tokens,
+            "prompt": self.total_input_tokens,
+            "completion": self.total_output_tokens,
+            "total": self.total_tokens,
         }
 
     @property

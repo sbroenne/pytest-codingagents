@@ -15,6 +15,8 @@ from pytest_codingagents.copilot.runner import run_copilot
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine
 
+    from _pytest.nodes import Item
+
     from pytest_codingagents.copilot.agent import CopilotAgent
     from pytest_codingagents.copilot.result import CopilotResult
 
@@ -43,26 +45,25 @@ def copilot_run(
     async def _run(agent: CopilotAgent, prompt: str) -> CopilotResult:
         result = await run_copilot(agent, prompt)
 
-        # Stash for pytest-aitest's reporting plugin
-        # pytest-aitest reads these in pytest_runtest_makereport
-        _stash_for_aitest(request, agent, result)
+        # Stash for pytest-aitest's reporting plugin.
+        # The plugin hook also does this automatically for tests that
+        # call run_copilot() directly, but explicit stashing from the
+        # fixture ensures it works even if the hook order changes.
+        stash_on_item(request.node, agent, result)
 
         return result
 
     return _run
 
 
-def _stash_for_aitest(
-    request: pytest.FixtureRequest,
+def _convert_to_aitest(
     agent: CopilotAgent,
     result: CopilotResult,
-) -> None:
-    """Stash result on the test node for pytest-aitest compatibility.
+) -> tuple[Any, Any] | None:
+    """Convert CopilotResult to pytest-aitest types.
 
-    pytest-aitest's plugin reads ``node._aitest_result`` and
-    ``node._aitest_agent`` in its ``pytest_runtest_makereport`` hook
-    to build HTML reports. We produce compatible objects so Copilot
-    test results appear in the same reports as synthetic agent tests.
+    Returns ``(AgentResult, Agent)`` tuple, or ``None`` if pytest-aitest
+    is not installed.
     """
     try:
         from pytest_aitest.core.agent import Agent, Provider
@@ -109,10 +110,44 @@ def _stash_for_aitest(
             max_turns=agent.max_turns,
         )
 
-        # Stash on the test node
-        request.node._aitest_result = aitest_result  # type: ignore[attr-defined]
-        request.node._aitest_agent = aitest_agent  # type: ignore[attr-defined]
+        return aitest_result, aitest_agent
 
     except ImportError:
         # pytest-aitest not installed — tests still work, just no HTML reports
-        pass
+        return None
+
+
+def stash_on_item(
+    item: Item,
+    agent: CopilotAgent,
+    result: CopilotResult,
+) -> None:
+    """Stash result on the test node for pytest-aitest compatibility.
+
+    pytest-aitest's plugin reads ``node._aitest_result`` and
+    ``node._aitest_agent`` in its ``pytest_runtest_makereport`` hook
+    to build HTML reports. We produce compatible objects so Copilot
+    test results appear in the same reports as synthetic agent tests.
+
+    Called automatically by the ``copilot_run`` fixture and by the
+    ``pytest_runtest_makereport`` plugin hook; consumers should rarely
+    need to call this directly.
+    """
+    converted = _convert_to_aitest(agent, result)
+    if converted is not None:
+        item._aitest_result = converted[0]  # type: ignore[attr-defined]
+        item._aitest_agent = converted[1]  # type: ignore[attr-defined]
+
+
+def _stash_for_aitest(
+    request: pytest.FixtureRequest,
+    agent: CopilotAgent,
+    result: CopilotResult,
+) -> None:
+    """Stash result via fixture request (backward-compatible helper).
+
+    .. deprecated::
+        Use :func:`stash_on_item` instead, passing ``request.node``
+        as the ``item`` parameter.
+    """
+    stash_on_item(request.node, agent, result)  # type: ignore[arg-type]

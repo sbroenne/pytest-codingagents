@@ -62,6 +62,10 @@ class CopilotAgent:
     max_turns: int = 25
     timeout_s: float = 300.0
 
+    # Retry on transient SDK errors (fetch failed, model list errors)
+    max_retries: int = 2
+    retry_delay_s: float = 5.0
+
     # Permissions — auto-approve by default for deterministic testing
     auto_confirm: bool = True
 

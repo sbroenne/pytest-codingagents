@@ -3,9 +3,18 @@
 from __future__ import annotations
 
 from pytest_codingagents.copilot.agent import CopilotAgent
+from pytest_codingagents.copilot.agents import load_custom_agent, load_custom_agents
 from pytest_codingagents.copilot.result import CopilotResult
 
 __all__ = [
     "CopilotAgent",
     "CopilotResult",
+    "load_custom_agent",
+    "load_custom_agents",
 ]
+
+# Lazy re-export: validation subpackage (available when extras are installed)
+try:
+    from pytest_codingagents import validation  # noqa: F401
+except ImportError:
+    pass
