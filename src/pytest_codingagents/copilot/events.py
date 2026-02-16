@@ -369,57 +369,22 @@ def _get_data_field(event: SessionEvent, field: str, default: Any = None) -> Any
 
 
 def _compute_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    """Compute cost in USD from token counts using litellm pricing data.
+    """Compute cost in USD from token counts.
+
+    Delegates to pytest-aitest's ``estimate_cost`` which handles litellm
+    pricing lookup, ``pricing.toml`` overrides, and dated-version fallback.
 
     The Copilot SDK's ``data.cost`` field uses an unknown unit that does NOT
     correspond to USD, so we compute cost ourselves from token counts.
-
-    Looks up per-token pricing from litellm's ``model_cost`` map, trying
-    common model-name variants (e.g. ``claude-opus-4.5`` → ``claude-opus-4-5``).
-
-    Returns 0.0 if no pricing data is found for the model.
     """
     if input_tokens == 0 and output_tokens == 0:
         return 0.0
     try:
-        from litellm import model_cost  # type: ignore[reportMissingImports]
+        from pytest_aitest.execution.cost import estimate_cost
 
-        info = _lookup_model_cost(model, model_cost)
-        if info is None:
-            return 0.0
-
-        input_rate = info.get("input_cost_per_token", 0.0) or 0.0
-        output_rate = info.get("output_cost_per_token", 0.0) or 0.0
-        return input_tokens * input_rate + output_tokens * output_rate
+        return estimate_cost(model, input_tokens, output_tokens)
     except Exception:
         return 0.0
-
-
-def _lookup_model_cost(model: str, cost_map: dict[str, Any]) -> dict[str, Any] | None:
-    """Find model pricing in litellm's cost map, trying name variants.
-
-    The Copilot SDK may return model names that don't exactly match
-    litellm's keys (e.g. ``claude-opus-4.5`` vs ``claude-opus-4-5``).
-    """
-    import re
-
-    # Direct match
-    if model in cost_map:
-        return cost_map[model]
-
-    # Try azure/ prefix (SDK returns bare names, litellm often uses azure/ keys)
-    if f"azure/{model}" in cost_map:
-        return cost_map[f"azure/{model}"]
-
-    # Normalize Claude dot-notation: claude-opus-4.5 → claude-opus-4-5
-    normalized = re.sub(r"(\d+)\.(\d+)", r"\1-\2", model)
-    if normalized != model:
-        if normalized in cost_map:
-            return cost_map[normalized]
-        if f"azure_ai/{normalized}" in cost_map:
-            return cost_map[f"azure_ai/{normalized}"]
-
-    return None
 
 
 # ── Event type → handler dispatch table ──
