@@ -382,7 +382,7 @@ def _compute_cost(model: str, input_tokens: int, output_tokens: int) -> float:
     if input_tokens == 0 and output_tokens == 0:
         return 0.0
     try:
-        from litellm import model_cost
+        from litellm import model_cost  # type: ignore[reportMissingImports]
 
         info = _lookup_model_cost(model, model_cost)
         if info is None:
