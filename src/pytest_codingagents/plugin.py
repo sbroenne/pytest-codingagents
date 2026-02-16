@@ -88,7 +88,7 @@ def _build_pricing_table() -> str:
     pricing, pulled live from litellm so it stays current.
     """
     try:
-        from litellm import model_cost
+        from litellm import model_cost  # type: ignore[reportMissingImports]
     except ImportError:
         return "*Pricing data unavailable (litellm not installed).*"
 
