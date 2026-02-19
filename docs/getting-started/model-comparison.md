@@ -1,6 +1,6 @@
 # Model Comparison
 
-Compare how different models perform the same task.
+Compare how different models perform the same task — which is more reliable, more efficient, or better at following instructions.
 
 ## Example
 
@@ -8,7 +8,7 @@ Compare how different models perform the same task.
 import pytest
 from pytest_codingagents import CopilotAgent
 
-MODELS = ["claude-sonnet-4", "gpt-4.1"]
+MODELS = ["claude-opus-4.5", "gpt-5.2"]
 
 
 @pytest.mark.parametrize("model", MODELS)
@@ -23,14 +23,13 @@ async def test_fibonacci(copilot_run, tmp_path, model):
 
     assert result.success
     assert (tmp_path / "fibonacci.py").exists()
-
-    # Compare token usage across models
-    print(f"{model}: {result.total_tokens} tokens, ${result.total_cost_usd:.4f}")
 ```
 
-## What To Look For
+The AI analysis report will produce a leaderboard ranking models by pass rate, token efficiency, and turn count.
 
-- **Success rate** — Which model completes the task reliably?
-- **Token usage** — Which model is most efficient?
-- **Tool calls** — Which model uses tools appropriately?
-- **Reasoning traces** — How does each model think through the problem?
+## What To Compare
+
+- **Consistency** — Run the same test multiple times. Which model varies least across runs?
+- **Turn count** — `len(result.turns)` — fewer turns often means better instruction-following.
+- **Token usage** — `result.total_tokens` — efficiency matters at scale.
+- **Tool call patterns** — Does one model over-call tools or skip necessary ones?

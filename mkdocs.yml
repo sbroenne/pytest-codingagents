@@ -76,6 +76,7 @@ nav:
     - Instruction Testing: getting-started/instruction-testing.md
   - How-To Guides:
     - Overview: how-to/index.md
+    - A/B Testing: how-to/ab-testing.md
     - Skill Testing: how-to/skills.md
     - MCP Server Testing: how-to/mcp-servers.md
     - CLI Tool Testing: how-to/cli-tools.md

@@ -6,21 +6,35 @@ Everyone's copying instruction files from blog posts, pasting "you are a senior 
 
 **You don't know, because you're not testing it.**
 
-pytest-codingagents is a pytest plugin that runs your actual coding agent configuration against real tasks — then uses AI analysis to tell you **why** things failed and **what to fix**.
+pytest-codingagents gives you **A/B testing for coding agent configurations**. Run two configs against the same task, assert the difference, and let AI analysis tell you which one wins — and why.
 
 Currently supports **GitHub Copilot** via [copilot-sdk](https://www.npmjs.com/package/github-copilot-sdk). More agents (Claude Code, etc.) coming soon.
 
 ```python
 from pytest_codingagents import CopilotAgent
 
-async def test_create_file(copilot_run, tmp_path):
-    agent = CopilotAgent(
-        instructions="Create files as requested.",
-        working_directory=str(tmp_path),
+async def test_fastapi_instruction_steers_framework(copilot_run, tmp_path):
+    """Does 'always use FastAPI' actually change what the agent produces?"""
+    # Config A: generic instructions
+    baseline = CopilotAgent(
+        instructions="You are a Python developer.",
+        working_directory=str(tmp_path / "a"),
     )
-    result = await copilot_run(agent, "Create hello.py with print('hello')")
-    assert result.success
-    assert result.tool_was_called("create_file")
+    # Config B: framework mandate
+    with_fastapi = CopilotAgent(
+        instructions="You are a Python developer. ALWAYS use FastAPI for web APIs.",
+        working_directory=str(tmp_path / "b"),
+    )
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+
+    task = 'Create a web API with a GET /health endpoint returning {"status": "ok"}.'
+    result_a = await copilot_run(baseline, task)
+    result_b = await copilot_run(with_fastapi, task)
+
+    assert result_a.success and result_b.success
+    code_b = "\n".join(f.read_text() for f in (tmp_path / "b").rglob("*.py"))
+    assert "fastapi" in code_b.lower(), "FastAPI instruction was ignored — the config has no effect"
 ```
 
 ## Install
@@ -35,7 +49,8 @@ Authenticate via `GITHUB_TOKEN` env var (CI) or `gh auth status` (local).
 
 | Capability | What it proves | Guide |
 |---|---|---|
-| **Instructions** | Your custom instructions actually produce the desired behavior — not just vibes | [Getting Started](getting-started/index.md) |
+| **A/B comparison** | Config B actually produces different (and better) output than Config A | [A/B Testing](how-to/ab-testing.md) |
+| **Instructions** | Your custom instructions change agent behavior — not just vibes | [Getting Started](getting-started/index.md) |
 | **Skills** | That domain knowledge file is helping, not being ignored | [Skill Testing](how-to/skills.md) |
 | **Models** | Which model works best for your use case and budget | [Model Comparison](getting-started/model-comparison.md) |
 | **Custom Agents** | Your custom agent configurations actually work as intended | [Getting Started](getting-started/index.md) |

@@ -2,6 +2,7 @@
 
 Practical guides for common tasks.
 
+- [A/B Testing](ab-testing.md) — Prove that your config changes actually make a difference
 - [Skill Testing](skills.md) — Measure the impact of domain knowledge
 - [MCP Server Testing](mcp-servers.md) — Test that the agent uses your custom tools
 - [CLI Tool Testing](cli-tools.md) — Verify the agent operates CLI tools correctly
