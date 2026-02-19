@@ -1,4 +1,4 @@
-"""Unit tests for optimize_instruction(), azure_entra_model(), and InstructionSuggestion."""
+"""Unit tests for optimize_instruction() and InstructionSuggestion."""
 
 from __future__ import annotations
 
@@ -6,6 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from pytest_codingagents.copilot.optimizer import InstructionSuggestion, optimize_instruction
 from pytest_codingagents.copilot.result import CopilotResult, ToolCall, Turn
+
+# Patch targets
+_AGENT_PATCH = "pytest_codingagents.copilot.optimizer.PydanticAgent"
+_BUILD_MODEL_PATCH = "pytest_codingagents.copilot.optimizer.build_model_from_string"
+_FAKE_MODEL = MagicMock(name="fake-model")
 
 
 def _make_result(
@@ -28,10 +33,6 @@ def _make_agent_mock(instruction: str, reasoning: str, changes: str) -> MagicMoc
     agent_instance = MagicMock()
     agent_instance.run = AsyncMock(return_value=run_result)
     return MagicMock(return_value=agent_instance)
-
-
-# Patch target: PydanticAgent as imported in the optimizer module
-_AGENT_PATCH = "pytest_codingagents.copilot.optimizer.PydanticAgent"
 
 
 class TestInstructionSuggestion:
@@ -71,7 +72,7 @@ class TestOptimizeInstruction:
             reasoning="The original instruction omits documentation.",
             changes="Added docstring mandate.",
         )
-        with patch(_AGENT_PATCH, agent_class):
+        with patch(_BUILD_MODEL_PATCH, return_value=_FAKE_MODEL), patch(_AGENT_PATCH, agent_class):
             result = await optimize_instruction(
                 "Write Python code.", _make_result(), "Agent should add docstrings."
             )
@@ -81,36 +82,41 @@ class TestOptimizeInstruction:
         assert result.changes == "Added docstring mandate."
 
     async def test_uses_default_model(self):
-        """optimize_instruction defaults to openai:gpt-4o-mini."""
+        """optimize_instruction defaults to azure/gpt-5.2-chat."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
-        with patch(_AGENT_PATCH, agent_class):
+        with (
+            patch(_BUILD_MODEL_PATCH, return_value=_FAKE_MODEL) as mock_build,
+            patch(_AGENT_PATCH, agent_class),
+        ):
             await optimize_instruction("inst", _make_result(), "criterion")
-        assert agent_class.call_args[0][0] == "openai:gpt-4o-mini"
+        mock_build.assert_called_once_with("azure/gpt-5.2-chat")
+        assert agent_class.call_args[0][0] is _FAKE_MODEL
 
     async def test_accepts_custom_model_string(self):
-        """optimize_instruction accepts a custom model string."""
+        """optimize_instruction passes model string through build_model_from_string."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
-        with patch(_AGENT_PATCH, agent_class):
+        with (
+            patch(_BUILD_MODEL_PATCH, return_value=_FAKE_MODEL) as mock_build,
+            patch(_AGENT_PATCH, agent_class),
+        ):
             await optimize_instruction(
-                "inst",
-                _make_result(),
-                "criterion",
-                model="anthropic:claude-3-haiku-20240307",
+                "inst", _make_result(), "criterion", model="openai/gpt-4o-mini"
             )
-        assert agent_class.call_args[0][0] == "anthropic:claude-3-haiku-20240307"
+        mock_build.assert_called_once_with("openai/gpt-4o-mini")
 
     async def test_accepts_model_object(self):
-        """optimize_instruction accepts a pre-built Model object (e.g. azure_entra_model())."""
+        """optimize_instruction skips build_model_from_string for a pre-built Model object."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
         fake_model = MagicMock()
-        with patch(_AGENT_PATCH, agent_class):
+        with patch(_BUILD_MODEL_PATCH) as mock_build, patch(_AGENT_PATCH, agent_class):
             await optimize_instruction("inst", _make_result(), "criterion", model=fake_model)
+        mock_build.assert_not_called()
         assert agent_class.call_args[0][0] is fake_model
 
     async def test_includes_criterion_in_prompt(self):
         agent_class = _make_agent_mock("improved", "reason", "change")
         agent_instance = agent_class.return_value
-        with patch(_AGENT_PATCH, agent_class):
+        with patch(_BUILD_MODEL_PATCH, return_value=_FAKE_MODEL), patch(_AGENT_PATCH, agent_class):
             await optimize_instruction(
                 "Write code.", _make_result(), "Agent must use type hints on all functions."
             )
@@ -119,7 +125,7 @@ class TestOptimizeInstruction:
     async def test_includes_current_instruction_in_prompt(self):
         agent_class = _make_agent_mock("inst", "reason", "changes")
         agent_instance = agent_class.return_value
-        with patch(_AGENT_PATCH, agent_class):
+        with patch(_BUILD_MODEL_PATCH, return_value=_FAKE_MODEL), patch(_AGENT_PATCH, agent_class):
             await optimize_instruction(
                 "Always use FastAPI for web APIs.", _make_result(), "criterion"
             )
@@ -128,7 +134,7 @@ class TestOptimizeInstruction:
     async def test_includes_agent_output_in_prompt(self):
         agent_class = _make_agent_mock("inst", "reason", "changes")
         agent_instance = agent_class.return_value
-        with patch(_AGENT_PATCH, agent_class):
+        with patch(_BUILD_MODEL_PATCH, return_value=_FAKE_MODEL), patch(_AGENT_PATCH, agent_class):
             await optimize_instruction(
                 "inst", _make_result(final_response="def add(a, b): return a + b"), "criterion"
             )
@@ -136,7 +142,7 @@ class TestOptimizeInstruction:
 
     async def test_handles_no_final_response(self):
         agent_class = _make_agent_mock("inst", "reason", "changes")
-        with patch(_AGENT_PATCH, agent_class):
+        with patch(_BUILD_MODEL_PATCH, return_value=_FAKE_MODEL), patch(_AGENT_PATCH, agent_class):
             result = await optimize_instruction(
                 "inst", CopilotResult(success=False, turns=[]), "criterion"
             )
@@ -144,78 +150,15 @@ class TestOptimizeInstruction:
 
     async def test_handles_empty_instruction(self):
         agent_class = _make_agent_mock("new inst", "reason", "changes")
-        with patch(_AGENT_PATCH, agent_class):
+        with patch(_BUILD_MODEL_PATCH, return_value=_FAKE_MODEL), patch(_AGENT_PATCH, agent_class):
             result = await optimize_instruction("", _make_result(), "criterion")
         assert isinstance(result, InstructionSuggestion)
 
     async def test_includes_tool_calls_in_prompt(self):
         agent_class = _make_agent_mock("inst", "reason", "changes")
         agent_instance = agent_class.return_value
-        with patch(_AGENT_PATCH, agent_class):
+        with patch(_BUILD_MODEL_PATCH, return_value=_FAKE_MODEL), patch(_AGENT_PATCH, agent_class):
             await optimize_instruction(
                 "inst", _make_result(tools=["create_file", "read_file"]), "criterion"
             )
         assert "create_file" in agent_instance.run.call_args[0][0]
-
-
-class TestAzureEntraModel:
-    """Tests for azure_entra_model()."""
-
-    # Patch targets: lazy imports inside the function body live in their home modules
-    _PATCHES = [
-        ("azure.identity.DefaultAzureCredential", MagicMock()),
-        ("azure.identity.get_bearer_token_provider", MagicMock()),
-        ("openai.AsyncAzureOpenAI", MagicMock()),
-        ("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
-    ]
-
-    def test_returns_model_object(self):
-        """azure_entra_model() returns a pydantic-ai Model-compatible object."""
-        from pytest_codingagents.copilot.optimizer import azure_entra_model
-
-        fake_model = MagicMock()
-        with (
-            patch("azure.identity.DefaultAzureCredential", MagicMock()),
-            patch("azure.identity.get_bearer_token_provider", MagicMock()),
-            patch("openai.AsyncAzureOpenAI", MagicMock()),
-            patch("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
-            patch("pydantic_ai.models.openai.OpenAIChatModel", return_value=fake_model),
-        ):
-            result = azure_entra_model(endpoint="https://test.openai.azure.com/")
-        assert result is fake_model
-
-    def test_default_deployment_is_gpt52(self):
-        """azure_entra_model() defaults to gpt-5.2-chat."""
-        from pytest_codingagents.copilot.optimizer import azure_entra_model
-
-        captured: list[str] = []
-        with (
-            patch("azure.identity.DefaultAzureCredential", MagicMock()),
-            patch("azure.identity.get_bearer_token_provider", MagicMock()),
-            patch("openai.AsyncAzureOpenAI", MagicMock()),
-            patch("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
-            patch(
-                "pydantic_ai.models.openai.OpenAIChatModel",
-                side_effect=lambda name, **kw: captured.append(name) or MagicMock(),
-            ),
-        ):
-            azure_entra_model(endpoint="https://test.openai.azure.com/")
-        assert captured == ["gpt-5.2-chat"]
-
-    def test_custom_deployment_name(self):
-        """azure_entra_model() uses the provided deployment name."""
-        from pytest_codingagents.copilot.optimizer import azure_entra_model
-
-        captured: list[str] = []
-        with (
-            patch("azure.identity.DefaultAzureCredential", MagicMock()),
-            patch("azure.identity.get_bearer_token_provider", MagicMock()),
-            patch("openai.AsyncAzureOpenAI", MagicMock()),
-            patch("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
-            patch(
-                "pydantic_ai.models.openai.OpenAIChatModel",
-                side_effect=lambda name, **kw: captured.append(name) or MagicMock(),
-            ),
-        ):
-            azure_entra_model("gpt-4.1", endpoint="https://test.openai.azure.com/")
-        assert captured == ["gpt-4.1"]
