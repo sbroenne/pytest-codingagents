@@ -2,9 +2,9 @@
 
 These tests require:
 - GitHub Copilot credentials (for copilot_run to produce a real result)
-- An LLM API key for the optimizer (OPENAI_API_KEY or configure a different model)
+- AZURE_OPENAI_ENDPOINT env var set (for the optimizer LLM via Azure Entra ID)
 
-Skipped automatically when the required API key is absent.
+Skipped automatically when AZURE_OPENAI_ENDPOINT is absent.
 """
 
 from __future__ import annotations
@@ -14,18 +14,27 @@ import os
 import pytest
 
 from pytest_codingagents.copilot.agent import CopilotAgent
-from pytest_codingagents.copilot.optimizer import InstructionSuggestion, optimize_instruction
+from pytest_codingagents.copilot.optimizer import (
+    InstructionSuggestion,
+    azure_entra_model,
+    optimize_instruction,
+)
+
+
+def _model():
+    """Build Azure Entra ID model for optimizer tests."""
+    return azure_entra_model()  # defaults to gpt-5.2-chat
 
 
 @pytest.mark.copilot
 class TestOptimizeInstructionIntegration:
-    """Integration tests for optimize_instruction() with real LLM calls."""
+    """Integration tests for optimize_instruction() with real Azure LLM calls."""
 
     @pytest.fixture(autouse=True)
-    def require_openai_key(self):
-        """Skip entire class when OPENAI_API_KEY is not set."""
-        if not os.environ.get("OPENAI_API_KEY"):
-            pytest.skip("OPENAI_API_KEY not set — skipping optimizer integration tests")
+    def require_azure_endpoint(self):
+        """Skip entire class when AZURE_OPENAI_ENDPOINT is not set."""
+        if not os.environ.get("AZURE_OPENAI_ENDPOINT"):
+            pytest.skip("AZURE_OPENAI_ENDPOINT not set — skipping optimizer integration tests")
 
     async def test_returns_valid_suggestion(self, copilot_run, tmp_path):
         """optimize_instruction returns an InstructionSuggestion with non-empty fields."""
@@ -44,6 +53,7 @@ class TestOptimizeInstructionIntegration:
             agent.instructions or "",
             result,
             "Every function must have a Google-style docstring.",
+            model=_model(),
         )
 
         assert isinstance(suggestion, InstructionSuggestion)
@@ -66,6 +76,7 @@ class TestOptimizeInstructionIntegration:
             agent.instructions or "",
             result,
             "Add type hints to all function parameters and return values.",
+            model=_model(),
         )
 
         text = str(suggestion)
@@ -91,6 +102,7 @@ class TestOptimizeInstructionIntegration:
             agent.instructions or "",
             result,
             criterion,
+            model=_model(),
         )
 
         # The suggestion instruction should mention docstrings somehow

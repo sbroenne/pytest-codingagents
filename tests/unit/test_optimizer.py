@@ -1,11 +1,8 @@
-"""Unit tests for optimize_instruction() and InstructionSuggestion."""
+"""Unit tests for optimize_instruction(), azure_entra_model(), and InstructionSuggestion."""
 
 from __future__ import annotations
 
-import sys
-from unittest.mock import AsyncMock, MagicMock
-
-import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from pytest_codingagents.copilot.optimizer import InstructionSuggestion, optimize_instruction
 from pytest_codingagents.copilot.result import CopilotResult, ToolCall, Turn
@@ -20,27 +17,21 @@ def _make_result(
     tool_calls = [ToolCall(name=t, arguments={}) for t in (tools or [])]
     return CopilotResult(
         success=success,
-        turns=[
-            Turn(role="assistant", content=final_response, tool_calls=tool_calls),
-        ],
+        turns=[Turn(role="assistant", content=final_response, tool_calls=tool_calls)],
     )
 
 
 def _make_agent_mock(instruction: str, reasoning: str, changes: str) -> MagicMock:
-    """Build a pydantic-ai Agent mock that returns a structured suggestion."""
-    output = MagicMock()
-    output.instruction = instruction
-    output.reasoning = reasoning
-    output.changes = changes
-
-    run_result = MagicMock()
-    run_result.output = output
-
+    """Return a MagicMock that behaves like pydantic-ai Agent class."""
+    output = MagicMock(instruction=instruction, reasoning=reasoning, changes=changes)
+    run_result = MagicMock(output=output)
     agent_instance = MagicMock()
     agent_instance.run = AsyncMock(return_value=run_result)
+    return MagicMock(return_value=agent_instance)
 
-    agent_class = MagicMock(return_value=agent_instance)
-    return agent_class
+
+# Patch target: PydanticAgent as imported in the optimizer module
+_AGENT_PATCH = "pytest_codingagents.copilot.optimizer.PydanticAgent"
 
 
 class TestInstructionSuggestion:
@@ -55,27 +46,17 @@ class TestInstructionSuggestion:
         assert "Always add docstrings." in str(s)
 
     def test_str_contains_reasoning(self):
-        s = InstructionSuggestion(
-            instruction="inst",
-            reasoning="because reasons",
-            changes="changed x",
-        )
+        s = InstructionSuggestion(instruction="inst", reasoning="because reasons", changes="x")
         assert "because reasons" in str(s)
 
     def test_str_contains_changes(self):
         s = InstructionSuggestion(
-            instruction="inst",
-            reasoning="reason",
-            changes="Added docstring mandate.",
+            instruction="inst", reasoning="reason", changes="Added docstring mandate."
         )
         assert "Added docstring mandate." in str(s)
 
     def test_fields_accessible(self):
-        s = InstructionSuggestion(
-            instruction="inst",
-            reasoning="reason",
-            changes="changes",
-        )
+        s = InstructionSuggestion(instruction="inst", reasoning="reason", changes="changes")
         assert s.instruction == "inst"
         assert s.reasoning == "reason"
         assert s.changes == "changes"
@@ -85,22 +66,15 @@ class TestOptimizeInstruction:
     """Tests for optimize_instruction()."""
 
     async def test_returns_instruction_suggestion(self):
-        """optimize_instruction returns an InstructionSuggestion."""
         agent_class = _make_agent_mock(
             instruction="Always add Google-style docstrings.",
             reasoning="The original instruction omits documentation.",
             changes="Added docstring mandate.",
         )
-
-        # patch pydantic_ai.Agent in the module where it's imported
-        sys.modules["pydantic_ai"].Agent = agent_class  # type: ignore[attr-defined]
-
-        result = await optimize_instruction(
-            "Write Python code.",
-            _make_result(),
-            "Agent should add docstrings.",
-        )
-
+        with patch(_AGENT_PATCH, agent_class):
+            result = await optimize_instruction(
+                "Write Python code.", _make_result(), "Agent should add docstrings."
+            )
         assert isinstance(result, InstructionSuggestion)
         assert result.instruction == "Always add Google-style docstrings."
         assert result.reasoning == "The original instruction omits documentation."
@@ -109,127 +83,139 @@ class TestOptimizeInstruction:
     async def test_uses_default_model(self):
         """optimize_instruction defaults to openai:gpt-4o-mini."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
-        sys.modules["pydantic_ai"].Agent = agent_class  # type: ignore[attr-defined]
-
-        await optimize_instruction("inst", _make_result(), "criterion")
-
-        agent_class.assert_called_once()
+        with patch(_AGENT_PATCH, agent_class):
+            await optimize_instruction("inst", _make_result(), "criterion")
         assert agent_class.call_args[0][0] == "openai:gpt-4o-mini"
 
-    async def test_accepts_custom_model(self):
+    async def test_accepts_custom_model_string(self):
         """optimize_instruction accepts a custom model string."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
-        sys.modules["pydantic_ai"].Agent = agent_class  # type: ignore[attr-defined]
-
-        await optimize_instruction(
-            "inst",
-            _make_result(),
-            "criterion",
-            model="anthropic:claude-3-haiku-20240307",
-        )
-
+        with patch(_AGENT_PATCH, agent_class):
+            await optimize_instruction(
+                "inst",
+                _make_result(),
+                "criterion",
+                model="anthropic:claude-3-haiku-20240307",
+            )
         assert agent_class.call_args[0][0] == "anthropic:claude-3-haiku-20240307"
 
+    async def test_accepts_model_object(self):
+        """optimize_instruction accepts a pre-built Model object (e.g. azure_entra_model())."""
+        agent_class = _make_agent_mock("inst", "reason", "changes")
+        fake_model = MagicMock()
+        with patch(_AGENT_PATCH, agent_class):
+            await optimize_instruction("inst", _make_result(), "criterion", model=fake_model)
+        assert agent_class.call_args[0][0] is fake_model
+
     async def test_includes_criterion_in_prompt(self):
-        """The LLM prompt includes the criterion text."""
         agent_class = _make_agent_mock("improved", "reason", "change")
         agent_instance = agent_class.return_value
-        sys.modules["pydantic_ai"].Agent = agent_class  # type: ignore[attr-defined]
-
-        await optimize_instruction(
-            "Write code.",
-            _make_result(),
-            "Agent must use type hints on all functions.",
-        )
-
-        prompt = agent_instance.run.call_args[0][0]
-        assert "type hints" in prompt
+        with patch(_AGENT_PATCH, agent_class):
+            await optimize_instruction(
+                "Write code.", _make_result(), "Agent must use type hints on all functions."
+            )
+        assert "type hints" in agent_instance.run.call_args[0][0]
 
     async def test_includes_current_instruction_in_prompt(self):
-        """The LLM prompt contains the current instruction."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
         agent_instance = agent_class.return_value
-        sys.modules["pydantic_ai"].Agent = agent_class  # type: ignore[attr-defined]
-
-        await optimize_instruction(
-            "Always use FastAPI for web APIs.",
-            _make_result(),
-            "criterion",
-        )
-
-        prompt = agent_instance.run.call_args[0][0]
-        assert "FastAPI" in prompt
+        with patch(_AGENT_PATCH, agent_class):
+            await optimize_instruction(
+                "Always use FastAPI for web APIs.", _make_result(), "criterion"
+            )
+        assert "FastAPI" in agent_instance.run.call_args[0][0]
 
     async def test_includes_agent_output_in_prompt(self):
-        """The LLM prompt contains the agent's final response."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
         agent_instance = agent_class.return_value
-        sys.modules["pydantic_ai"].Agent = agent_class  # type: ignore[attr-defined]
-
-        result = _make_result(final_response="def add(a, b): return a + b")
-        await optimize_instruction("inst", result, "criterion")
-
-        prompt = agent_instance.run.call_args[0][0]
-        assert "def add" in prompt
+        with patch(_AGENT_PATCH, agent_class):
+            await optimize_instruction(
+                "inst", _make_result(final_response="def add(a, b): return a + b"), "criterion"
+            )
+        assert "def add" in agent_instance.run.call_args[0][0]
 
     async def test_handles_no_final_response(self):
-        """optimize_instruction handles results with no turns gracefully."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
-        sys.modules["pydantic_ai"].Agent = agent_class  # type: ignore[attr-defined]
-
-        empty_result = CopilotResult(success=False, turns=[])
-        result = await optimize_instruction("inst", empty_result, "criterion")
-
+        with patch(_AGENT_PATCH, agent_class):
+            result = await optimize_instruction(
+                "inst", CopilotResult(success=False, turns=[]), "criterion"
+            )
         assert isinstance(result, InstructionSuggestion)
 
     async def test_handles_empty_instruction(self):
-        """optimize_instruction handles empty current instruction."""
         agent_class = _make_agent_mock("new inst", "reason", "changes")
-        sys.modules["pydantic_ai"].Agent = agent_class  # type: ignore[attr-defined]
-
-        result = await optimize_instruction("", _make_result(), "criterion")
+        with patch(_AGENT_PATCH, agent_class):
+            result = await optimize_instruction("", _make_result(), "criterion")
         assert isinstance(result, InstructionSuggestion)
 
     async def test_includes_tool_calls_in_prompt(self):
-        """The LLM prompt includes tool call information."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
         agent_instance = agent_class.return_value
-        sys.modules["pydantic_ai"].Agent = agent_class  # type: ignore[attr-defined]
-
-        result = _make_result(tools=["create_file", "read_file"])
-        await optimize_instruction("inst", result, "criterion")
-
-        prompt = agent_instance.run.call_args[0][0]
-        assert "create_file" in prompt
+        with patch(_AGENT_PATCH, agent_class):
+            await optimize_instruction(
+                "inst", _make_result(tools=["create_file", "read_file"]), "criterion"
+            )
+        assert "create_file" in agent_instance.run.call_args[0][0]
 
 
-class TestOptimizeInstructionImportError:
-    """Test ImportError when pydantic-ai is not installed."""
+class TestAzureEntraModel:
+    """Tests for azure_entra_model()."""
 
-    async def test_raises_import_error_when_pydantic_ai_missing(self):
-        """optimize_instruction raises ImportError if pydantic-ai not installed."""
-        saved = sys.modules.get("pydantic_ai")
-        try:
-            sys.modules["pydantic_ai"] = None  # type: ignore
+    # Patch targets: lazy imports inside the function body live in their home modules
+    _PATCHES = [
+        ("azure.identity.DefaultAzureCredential", MagicMock()),
+        ("azure.identity.get_bearer_token_provider", MagicMock()),
+        ("openai.AsyncAzureOpenAI", MagicMock()),
+        ("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
+    ]
 
-            with pytest.raises(ImportError, match="pydantic-ai"):
-                await optimize_instruction("inst", _make_result(), "criterion")
-        finally:
-            if saved is not None:
-                sys.modules["pydantic_ai"] = saved
-            else:
-                del sys.modules["pydantic_ai"]
+    def test_returns_model_object(self):
+        """azure_entra_model() returns a pydantic-ai Model-compatible object."""
+        from pytest_codingagents.copilot.optimizer import azure_entra_model
 
-    async def test_import_error_includes_install_hint(self):
-        """ImportError message includes the uv add install hint."""
-        saved = sys.modules.get("pydantic_ai")
-        try:
-            sys.modules["pydantic_ai"] = None  # type: ignore
+        fake_model = MagicMock()
+        with (
+            patch("azure.identity.DefaultAzureCredential", MagicMock()),
+            patch("azure.identity.get_bearer_token_provider", MagicMock()),
+            patch("openai.AsyncAzureOpenAI", MagicMock()),
+            patch("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
+            patch("pydantic_ai.models.openai.OpenAIChatModel", return_value=fake_model),
+        ):
+            result = azure_entra_model(endpoint="https://test.openai.azure.com/")
+        assert result is fake_model
 
-            with pytest.raises(ImportError, match="uv add pydantic-ai"):
-                await optimize_instruction("inst", _make_result(), "criterion")
-        finally:
-            if saved is not None:
-                sys.modules["pydantic_ai"] = saved
-            else:
-                del sys.modules["pydantic_ai"]
+    def test_default_deployment_is_gpt52(self):
+        """azure_entra_model() defaults to gpt-5.2-chat."""
+        from pytest_codingagents.copilot.optimizer import azure_entra_model
+
+        captured: list[str] = []
+        with (
+            patch("azure.identity.DefaultAzureCredential", MagicMock()),
+            patch("azure.identity.get_bearer_token_provider", MagicMock()),
+            patch("openai.AsyncAzureOpenAI", MagicMock()),
+            patch("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
+            patch(
+                "pydantic_ai.models.openai.OpenAIChatModel",
+                side_effect=lambda name, **kw: captured.append(name) or MagicMock(),
+            ),
+        ):
+            azure_entra_model(endpoint="https://test.openai.azure.com/")
+        assert captured == ["gpt-5.2-chat"]
+
+    def test_custom_deployment_name(self):
+        """azure_entra_model() uses the provided deployment name."""
+        from pytest_codingagents.copilot.optimizer import azure_entra_model
+
+        captured: list[str] = []
+        with (
+            patch("azure.identity.DefaultAzureCredential", MagicMock()),
+            patch("azure.identity.get_bearer_token_provider", MagicMock()),
+            patch("openai.AsyncAzureOpenAI", MagicMock()),
+            patch("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
+            patch(
+                "pydantic_ai.models.openai.OpenAIChatModel",
+                side_effect=lambda name, **kw: captured.append(name) or MagicMock(),
+            ),
+        ):
+            azure_entra_model("gpt-4.1", endpoint="https://test.openai.azure.com/")
+        assert captured == ["gpt-4.1"]
