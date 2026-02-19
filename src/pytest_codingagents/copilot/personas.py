@@ -179,6 +179,8 @@ class VSCodePersona(Persona):
         if agent.custom_agents:
             tool = _make_runsubagent_tool(agent, agent.custom_agents, mapper)
             _inject_tool(session_config, tool)
+            agents_block = _build_agents_block(agent.custom_agents, tool_name="runSubagent")
+            _prepend_system_message(session_config, agents_block)
 
 
 # ---------------------------------------------------------------------------
@@ -215,6 +217,8 @@ class ClaudeCodePersona(Persona):
         if agent.custom_agents:
             tool = _make_task_tool(agent, agent.custom_agents, mapper)
             _inject_tool(session_config, tool)
+            agents_block = _build_agents_block(agent.custom_agents, tool_name="task")
+            _prepend_system_message(session_config, agents_block)
 
 
 # ---------------------------------------------------------------------------
@@ -247,6 +251,44 @@ def _inject_tool(session_config: dict[str, Any], tool: "Tool") -> None:
     """Append *tool* to the tools list in *session_config*."""
     existing: list[Any] = list(session_config.get("tools") or [])
     session_config["tools"] = existing + [tool]
+
+
+def _build_agents_block(custom_agents: list[dict[str, Any]], tool_name: str = "runSubagent") -> str:
+    """Build the <agents> XML block that VS Code injects into the system prompt.
+
+    Mirrors ``computeAutomaticInstructions.ts`` in ``microsoft/vscode``:
+    lists available subagents by name and description so the model knows
+    which agents to dispatch and how to call them.
+
+    Args:
+        custom_agents: List of custom agent config dicts (each with at least
+            a ``name`` key, optionally ``description`` and ``argument_hint``).
+        tool_name: Name of the dispatch tool (``runSubagent`` for VS Code,
+            ``task`` for Claude Code).
+
+    Returns:
+        The ``<agents>…</agents>`` XML string to prepend to the system message.
+    """
+    lines: list[str] = [
+        "<agents>",
+        "Here is a list of agents that can be used when running a subagent.",
+        (
+            "Each agent has optionally a description with the agent's purpose "
+            "and expertise. When asked to run a subagent, choose the most "
+            "appropriate agent from this list."
+        ),
+        f"Use the {tool_name} tool with the agent name to run the subagent.",
+    ]
+    for a in custom_agents:
+        lines.append("<agent>")
+        lines.append(f"<name>{a['name']}</name>")
+        if desc := a.get("description"):
+            lines.append(f"<description>{desc}</description>")
+        if hint := a.get("argument_hint") or a.get("argumentHint"):
+            lines.append(f"<argumentHint>{hint}</argumentHint>")
+        lines.append("</agent>")
+    lines.append("</agents>")
+    return "\n".join(lines)
 
 
 def _make_runsubagent_tool(
