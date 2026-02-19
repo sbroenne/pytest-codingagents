@@ -2,7 +2,7 @@
 
 These tests require:
 - GitHub Copilot credentials (for copilot_run to produce a real result)
-- AZURE_OPENAI_ENDPOINT env var set (for the optimizer LLM via Azure Entra ID)
+- AZURE_API_BASE or AZURE_OPENAI_ENDPOINT env var (for the optimizer LLM via Azure Entra ID)
 
 Skipped automatically when AZURE_OPENAI_ENDPOINT is absent.
 """
@@ -14,16 +14,7 @@ import os
 import pytest
 
 from pytest_codingagents.copilot.agent import CopilotAgent
-from pytest_codingagents.copilot.optimizer import (
-    InstructionSuggestion,
-    azure_entra_model,
-    optimize_instruction,
-)
-
-
-def _model():
-    """Build Azure Entra ID model for optimizer tests."""
-    return azure_entra_model()  # defaults to gpt-5.2-chat
+from pytest_codingagents.copilot.optimizer import InstructionSuggestion, optimize_instruction
 
 
 @pytest.mark.copilot
@@ -33,7 +24,7 @@ class TestOptimizeInstructionIntegration:
     @pytest.fixture(autouse=True)
     def require_azure_endpoint(self):
         """Skip entire class when AZURE_OPENAI_ENDPOINT is not set."""
-        if not os.environ.get("AZURE_OPENAI_ENDPOINT"):
+        if not os.environ.get("AZURE_OPENAI_ENDPOINT") and not os.environ.get("AZURE_API_BASE"):
             pytest.skip("AZURE_OPENAI_ENDPOINT not set — skipping optimizer integration tests")
 
     async def test_returns_valid_suggestion(self, copilot_run, tmp_path):
@@ -53,7 +44,6 @@ class TestOptimizeInstructionIntegration:
             agent.instructions or "",
             result,
             "Every function must have a Google-style docstring.",
-            model=_model(),
         )
 
         assert isinstance(suggestion, InstructionSuggestion)
@@ -76,7 +66,6 @@ class TestOptimizeInstructionIntegration:
             agent.instructions or "",
             result,
             "Add type hints to all function parameters and return values.",
-            model=_model(),
         )
 
         text = str(suggestion)
@@ -102,7 +91,6 @@ class TestOptimizeInstructionIntegration:
             agent.instructions or "",
             result,
             criterion,
-            model=_model(),
         )
 
         # The suggestion instruction should mention docstrings somehow

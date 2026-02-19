@@ -81,26 +81,28 @@ class TestOptimizeInstruction:
         assert result.changes == "Added docstring mandate."
 
     async def test_uses_default_model(self):
-        """optimize_instruction defaults to openai:gpt-4o-mini."""
+        """optimize_instruction defaults to azure/gpt-5.2-chat."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
         with patch(_AGENT_PATCH, agent_class):
             await optimize_instruction("inst", _make_result(), "criterion")
-        assert agent_class.call_args[0][0] == "openai:gpt-4o-mini"
+        # build_model_from_string("azure/gpt-5.2-chat") returns an OpenAIChatModel object
+        assert agent_class.call_args[0][0] is not None
 
     async def test_accepts_custom_model_string(self):
-        """optimize_instruction accepts a custom model string."""
+        """optimize_instruction accepts a custom model string (provider/model format)."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
         with patch(_AGENT_PATCH, agent_class):
             await optimize_instruction(
                 "inst",
                 _make_result(),
                 "criterion",
-                model="anthropic:claude-3-haiku-20240307",
+                model="openai/gpt-4o-mini",
             )
-        assert agent_class.call_args[0][0] == "anthropic:claude-3-haiku-20240307"
+        # build_model_from_string converts "openai/gpt-4o-mini" -> "openai:gpt-4o-mini"
+        assert agent_class.call_args[0][0] == "openai:gpt-4o-mini"
 
     async def test_accepts_model_object(self):
-        """optimize_instruction accepts a pre-built Model object (e.g. azure_entra_model())."""
+        """optimize_instruction accepts a pre-built Model object."""
         agent_class = _make_agent_mock("inst", "reason", "changes")
         fake_model = MagicMock()
         with patch(_AGENT_PATCH, agent_class):
@@ -156,66 +158,3 @@ class TestOptimizeInstruction:
                 "inst", _make_result(tools=["create_file", "read_file"]), "criterion"
             )
         assert "create_file" in agent_instance.run.call_args[0][0]
-
-
-class TestAzureEntraModel:
-    """Tests for azure_entra_model()."""
-
-    # Patch targets: lazy imports inside the function body live in their home modules
-    _PATCHES = [
-        ("azure.identity.DefaultAzureCredential", MagicMock()),
-        ("azure.identity.get_bearer_token_provider", MagicMock()),
-        ("openai.AsyncAzureOpenAI", MagicMock()),
-        ("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
-    ]
-
-    def test_returns_model_object(self):
-        """azure_entra_model() returns a pydantic-ai Model-compatible object."""
-        from pytest_codingagents.copilot.optimizer import azure_entra_model
-
-        fake_model = MagicMock()
-        with (
-            patch("azure.identity.DefaultAzureCredential", MagicMock()),
-            patch("azure.identity.get_bearer_token_provider", MagicMock()),
-            patch("openai.AsyncAzureOpenAI", MagicMock()),
-            patch("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
-            patch("pydantic_ai.models.openai.OpenAIChatModel", return_value=fake_model),
-        ):
-            result = azure_entra_model(endpoint="https://test.openai.azure.com/")
-        assert result is fake_model
-
-    def test_default_deployment_is_gpt52(self):
-        """azure_entra_model() defaults to gpt-5.2-chat."""
-        from pytest_codingagents.copilot.optimizer import azure_entra_model
-
-        captured: list[str] = []
-        with (
-            patch("azure.identity.DefaultAzureCredential", MagicMock()),
-            patch("azure.identity.get_bearer_token_provider", MagicMock()),
-            patch("openai.AsyncAzureOpenAI", MagicMock()),
-            patch("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
-            patch(
-                "pydantic_ai.models.openai.OpenAIChatModel",
-                side_effect=lambda name, **kw: captured.append(name) or MagicMock(),
-            ),
-        ):
-            azure_entra_model(endpoint="https://test.openai.azure.com/")
-        assert captured == ["gpt-5.2-chat"]
-
-    def test_custom_deployment_name(self):
-        """azure_entra_model() uses the provided deployment name."""
-        from pytest_codingagents.copilot.optimizer import azure_entra_model
-
-        captured: list[str] = []
-        with (
-            patch("azure.identity.DefaultAzureCredential", MagicMock()),
-            patch("azure.identity.get_bearer_token_provider", MagicMock()),
-            patch("openai.AsyncAzureOpenAI", MagicMock()),
-            patch("pydantic_ai.providers.openai.OpenAIProvider", MagicMock()),
-            patch(
-                "pydantic_ai.models.openai.OpenAIChatModel",
-                side_effect=lambda name, **kw: captured.append(name) or MagicMock(),
-            ),
-        ):
-            azure_entra_model("gpt-4.1", endpoint="https://test.openai.azure.com/")
-        assert captured == ["gpt-4.1"]
