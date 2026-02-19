@@ -8,6 +8,7 @@ CopilotResult) remain here.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 # Re-export shared types from pytest-aitest so existing imports keep working:
@@ -187,3 +188,63 @@ class CopilotResult:
 
     def __bool__(self) -> bool:
         return self.success
+
+    # ── File helpers ──
+
+    @property
+    def working_directory(self) -> Path:
+        """Working directory where the agent operated.
+
+        Resolved from ``agent.working_directory`` when set; falls back to
+        the current working directory.
+        """
+        if self.agent and self.agent.working_directory:
+            return Path(self.agent.working_directory)
+        return Path.cwd()
+
+    def file(self, path: str) -> str:
+        """Read the content of a file relative to the working directory.
+
+        Args:
+            path: Relative file path (e.g. ``"main.py"`` or ``"src/utils.py"``).
+
+        Returns:
+            File content as a string.
+
+        Raises:
+            FileNotFoundError: If the file does not exist.
+        """
+        return (self.working_directory / path).read_text(encoding="utf-8")
+
+    def file_exists(self, path: str) -> bool:
+        """Check whether a file exists in the working directory.
+
+        Args:
+            path: Relative file path.
+
+        Returns:
+            ``True`` if the file exists, ``False`` otherwise.
+        """
+        return (self.working_directory / path).exists()
+
+    def files_matching(self, pattern: str = "**/*") -> list[Path]:
+        """Find files matching a glob pattern in the working directory.
+
+        Args:
+            pattern: Glob pattern relative to the working directory.
+                Defaults to ``"**/*"`` (all files recursively).
+
+        Returns:
+            Sorted list of matching ``Path`` objects (files only, no
+            directories).
+
+        Example::
+
+            # All Python files created by the agent
+            py_files = result.files_matching("**/*.py")
+            assert py_files, "No Python files were created"
+
+            # Top-level test files
+            test_files = result.files_matching("test_*.py")
+        """
+        return sorted(p for p in self.working_directory.glob(pattern) if p.is_file())

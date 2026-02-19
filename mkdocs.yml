@@ -77,6 +77,7 @@ nav:
   - How-To Guides:
     - Overview: how-to/index.md
     - A/B Testing: how-to/ab-testing.md
+    - Assertions: how-to/assertions.md
     - Load from Copilot Config: how-to/copilot-config.md
     - Skill Testing: how-to/skills.md
     - MCP Server Testing: how-to/mcp-servers.md

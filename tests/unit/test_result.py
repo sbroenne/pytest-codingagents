@@ -196,3 +196,86 @@ class TestAllResponses:
             turns=[Turn(role="user", content="hi")],
         )
         assert result.all_responses == []
+
+
+class TestFileHelpers:
+    """Tests for file helper methods."""
+
+    def _result_with_workdir(self, path) -> CopilotResult:
+        from pytest_codingagents.copilot.agent import CopilotAgent
+
+        agent = CopilotAgent(working_directory=str(path))
+        result = CopilotResult()
+        result.agent = agent
+        return result
+
+    def test_working_directory_from_agent(self, tmp_path):
+        result = self._result_with_workdir(tmp_path)
+        assert result.working_directory == tmp_path
+
+    def test_working_directory_defaults_to_cwd_when_no_agent(self):
+        from pathlib import Path
+
+        result = CopilotResult()
+        assert result.working_directory == Path.cwd()
+
+    def test_file_reads_content(self, tmp_path):
+        (tmp_path / "main.py").write_text("print('hello')", encoding="utf-8")
+        result = self._result_with_workdir(tmp_path)
+        assert result.file("main.py") == "print('hello')"
+
+    def test_file_reads_nested_path(self, tmp_path):
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "utils.py").write_text("x = 1", encoding="utf-8")
+        result = self._result_with_workdir(tmp_path)
+        assert result.file("src/utils.py") == "x = 1"
+
+    def test_file_raises_on_missing(self, tmp_path):
+        result = self._result_with_workdir(tmp_path)
+        with pytest.raises(FileNotFoundError):
+            result.file("nonexistent.py")
+
+    def test_file_exists_true(self, tmp_path):
+        (tmp_path / "hello.py").write_text("", encoding="utf-8")
+        result = self._result_with_workdir(tmp_path)
+        assert result.file_exists("hello.py") is True
+
+    def test_file_exists_false(self, tmp_path):
+        result = self._result_with_workdir(tmp_path)
+        assert result.file_exists("missing.py") is False
+
+    def test_files_matching_all(self, tmp_path):
+        (tmp_path / "a.py").write_text("", encoding="utf-8")
+        (tmp_path / "b.txt").write_text("", encoding="utf-8")
+        result = self._result_with_workdir(tmp_path)
+        names = {p.name for p in result.files_matching()}
+        assert names == {"a.py", "b.txt"}
+
+    def test_files_matching_pattern(self, tmp_path):
+        (tmp_path / "main.py").write_text("", encoding="utf-8")
+        (tmp_path / "test_main.py").write_text("", encoding="utf-8")
+        (tmp_path / "readme.md").write_text("", encoding="utf-8")
+        result = self._result_with_workdir(tmp_path)
+        py_files = result.files_matching("*.py")
+        assert len(py_files) == 2
+        assert all(p.suffix == ".py" for p in py_files)
+
+    def test_files_matching_recursive(self, tmp_path):
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "a.py").write_text("", encoding="utf-8")
+        (tmp_path / "b.py").write_text("", encoding="utf-8")
+        result = self._result_with_workdir(tmp_path)
+        py_files = result.files_matching("**/*.py")
+        assert len(py_files) == 2
+
+    def test_files_matching_empty_dir(self, tmp_path):
+        result = self._result_with_workdir(tmp_path)
+        assert result.files_matching() == []
+
+    def test_files_matching_sorted(self, tmp_path):
+        (tmp_path / "c.py").write_text("", encoding="utf-8")
+        (tmp_path / "a.py").write_text("", encoding="utf-8")
+        (tmp_path / "b.py").write_text("", encoding="utf-8")
+        result = self._result_with_workdir(tmp_path)
+        names = [p.name for p in result.files_matching("*.py")]
+        assert names == sorted(names)
