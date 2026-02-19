@@ -4,9 +4,18 @@ Provides :func:`optimize_instruction`, which uses an LLM to analyze the gap
 between a current agent instruction and the observed behavior, and suggests a
 concrete improvement.
 
-Requires ``pydantic-ai``:
+Model strings follow the same ``provider/model`` format used by
+``pytest-aitest`` (e.g. ``"azure/gpt-5.2-chat"``, ``"openai/gpt-4o-mini"``).
+Azure Entra ID authentication is handled automatically when
+``AZURE_API_BASE`` or ``AZURE_OPENAI_ENDPOINT`` is set.
 
-    uv add pydantic-ai
+Example::
+
+    suggestion = await optimize_instruction(
+        agent.instructions or "",
+        result,
+        "Agent should add docstrings.",
+    )
 """
 
 from __future__ import annotations
@@ -15,6 +24,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+from pydantic_ai import Agent as PydanticAgent
+from pydantic_ai.models import Model
+from pytest_aitest.execution.pydantic_adapter import build_model_from_string
 
 if TYPE_CHECKING:
     from pytest_codingagents.copilot.result import CopilotResult
@@ -70,7 +82,7 @@ async def optimize_instruction(
     result: CopilotResult,
     criterion: str,
     *,
-    model: str = "openai:gpt-4o-mini",
+    model: str | Model = "azure/gpt-5.2-chat",
 ) -> InstructionSuggestion:
     """Analyze a result and suggest an improved instruction.
 
@@ -79,7 +91,11 @@ async def optimize_instruction(
     concrete, actionable improvement.
 
     Designed to drop into ``pytest.fail()`` so the failure message
-    contains a ready-to-use fix:
+    contains a ready-to-use fix.
+
+    Model strings follow the same ``provider/model`` format used by
+    ``pytest-aitest``. Azure Entra ID auth is handled automatically
+    when ``AZURE_API_BASE`` or ``AZURE_OPENAI_ENDPOINT`` is set.
 
     Example::
 
@@ -97,24 +113,16 @@ async def optimize_instruction(
         result: The ``CopilotResult`` from the (failed) run.
         criterion: What the agent *should* have done — the test expectation
             in plain English (e.g. ``"Always write docstrings"``).
-        model: LiteLLM-style model string (e.g. ``"openai:gpt-4o-mini"``
-            or ``"anthropic:claude-3-haiku-20240307"``).
+        model: Provider/model string (e.g. ``"azure/gpt-5.2-chat"``,
+            ``"openai/gpt-4o-mini"``) or a pre-configured pydantic-ai
+            ``Model`` object. Defaults to ``"azure/gpt-5.2-chat"``.
 
     Returns:
         An :class:`InstructionSuggestion` with the improved instruction.
-
-    Raises:
-        ImportError: If pydantic-ai is not installed.
     """
-    try:
-        from pydantic_ai import Agent as PydanticAgent
-    except ImportError as exc:
-        msg = (
-            "pydantic-ai is required for optimize_instruction(). "
-            "Install it with: uv add pydantic-ai"
-        )
-        raise ImportError(msg) from exc
-
+    resolved_model: str | Model = (
+        build_model_from_string(model) if isinstance(model, str) else model
+    )
     final_output = result.final_response or "(no response)"
     tool_calls = ", ".join(sorted(result.tool_names_called)) or "none"
 
@@ -142,7 +150,7 @@ Suggest a specific, concise, directive improvement to the instruction
 that would make the agent satisfy the criterion.
 Keep the instruction under 200 words. Do not add unrelated rules."""
 
-    optimizer_agent = PydanticAgent(model, output_type=_OptimizationOutput)
+    optimizer_agent = PydanticAgent(resolved_model, output_type=_OptimizationOutput)
     run_result = await optimizer_agent.run(prompt)
     output = run_result.output
 
