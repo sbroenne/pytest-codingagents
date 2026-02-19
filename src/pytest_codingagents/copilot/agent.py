@@ -3,7 +3,54 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Literal
+
+import yaml
+
+
+def _parse_agent_file(path: Path) -> dict[str, Any]:
+    """Parse a ``.agent.md`` file into a ``CustomAgentConfig`` dict.
+
+    Handles optional YAML frontmatter (name, description, tools, mcp-servers)
+    followed by the agent's Markdown prompt body.
+    """
+    content = path.read_text(encoding="utf-8")
+    lines = content.split("\n")
+
+    frontmatter: dict[str, Any] = {}
+    body = content
+
+    if lines and lines[0].strip() == "---":
+        close_idx: int | None = None
+        for i, line in enumerate(lines[1:], 1):
+            if line.strip() == "---":
+                close_idx = i
+                break
+        if close_idx is not None:
+            try:
+                frontmatter = yaml.safe_load("\n".join(lines[1:close_idx])) or {}
+            except yaml.YAMLError:
+                frontmatter = {}
+            body = "\n".join(lines[close_idx + 1 :]).strip()
+
+    # Derive name from filename when not set in frontmatter
+    stem = path.name
+    if stem.endswith(".agent.md"):
+        stem = stem[: -len(".agent.md")]
+    name: str = str(frontmatter.get("name") or stem)
+
+    agent: dict[str, Any] = {"name": name}
+    if "description" in frontmatter:
+        agent["description"] = frontmatter["description"]
+    if body:
+        agent["prompt"] = body
+    if "tools" in frontmatter:
+        agent["tools"] = frontmatter["tools"]
+    if "mcp-servers" in frontmatter:
+        agent["mcp_servers"] = frontmatter["mcp-servers"]
+
+    return agent
 
 
 @dataclass(slots=True, frozen=True)
@@ -144,3 +191,78 @@ class CopilotAgent:
         config.update(self.extra_config)
 
         return config
+
+    @classmethod
+    def from_copilot_config(
+        cls,
+        project_path: str | Path = ".",
+        *,
+        include_global: bool = True,
+        _global_agents_dir: Path | None = None,
+        **overrides: Any,
+    ) -> "CopilotAgent":
+        """Load a ``CopilotAgent`` from real GitHub Copilot config files.
+
+        Discovers the following files automatically:
+
+        * **Project instructions** — ``.github/copilot-instructions.md``
+        * **Project custom agents** — ``.github/agents/*.agent.md``
+        * **Global custom agents** — ``~/.config/copilot/agents/*.agent.md``
+          (loaded when ``include_global=True``)
+
+        Project-level agents take precedence over global agents with the
+        same name.  Any keyword argument overrides the corresponding
+        ``CopilotAgent`` field after loading.
+
+        Args:
+            project_path: Path to the project root. Defaults to the current
+                working directory.
+            include_global: When ``True`` (default), user-global agents from
+                ``~/.config/copilot/agents/`` are merged in as a fallback.
+            **overrides: Override any ``CopilotAgent`` field, e.g.
+                ``model="claude-opus-4.5"``.
+
+        Returns:
+            A ``CopilotAgent`` initialised from the discovered config files.
+
+        Example::
+
+            # Mirror the exact Copilot config used in production
+            baseline = CopilotAgent.from_copilot_config()
+
+            # A/B test: production config vs. tightened instructions
+            treatment = CopilotAgent.from_copilot_config(
+                instructions="Always add type hints.",
+            )
+        """
+        project_path = Path(project_path).resolve()
+        github_dir = project_path / ".github"
+
+        # Load repository-wide instructions
+        instructions: str | None = None
+        instructions_file = github_dir / "copilot-instructions.md"
+        if instructions_file.exists():
+            instructions = instructions_file.read_text(encoding="utf-8").strip() or None
+
+        # Collect agents: global first, project overrides by name
+        agents_by_name: dict[str, dict[str, Any]] = {}
+
+        if include_global:
+            global_dir = _global_agents_dir or (Path.home() / ".config" / "copilot" / "agents")
+            if global_dir.exists():
+                for agent_file in sorted(global_dir.glob("*.agent.md")):
+                    parsed = _parse_agent_file(agent_file)
+                    agents_by_name[parsed["name"]] = parsed
+
+        project_agents_dir = github_dir / "agents"
+        if project_agents_dir.exists():
+            for agent_file in sorted(project_agents_dir.glob("*.agent.md")):
+                parsed = _parse_agent_file(agent_file)
+                agents_by_name[parsed["name"]] = parsed
+
+        config: dict[str, Any] = {
+            "instructions": instructions,
+            "custom_agents": list(agents_by_name.values()),
+        }
+        config.update(overrides)
+        return cls(**config)

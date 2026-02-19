@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pytest_codingagents.copilot.agent import CopilotAgent
+from pytest_codingagents.copilot.agent import CopilotAgent, _parse_agent_file
 
 
 class TestCopilotAgentDefaults:
@@ -144,3 +144,118 @@ class TestBuildSessionConfig:
         agent = CopilotAgent(name="no-custom")
         config = agent.build_session_config()
         assert "custom_agents" not in config
+
+
+class TestParseAgentFile:
+    """Unit tests for _parse_agent_file()."""
+
+    def test_with_full_frontmatter(self, tmp_path):
+        f = tmp_path / "test-specialist.agent.md"
+        f.write_text(
+            "---\nname: test-specialist\ndescription: Writes tests\ntools:\n  - read\n  - search\n---\nYou are a testing specialist.",
+            encoding="utf-8",
+        )
+        result = _parse_agent_file(f)
+        assert result["name"] == "test-specialist"
+        assert result["description"] == "Writes tests"
+        assert result["prompt"] == "You are a testing specialist."
+        assert result["tools"] == ["read", "search"]
+
+    def test_without_frontmatter(self, tmp_path):
+        f = tmp_path / "my-agent.agent.md"
+        f.write_text("You are a helpful agent.", encoding="utf-8")
+        result = _parse_agent_file(f)
+        assert result["name"] == "my-agent"
+        assert result["prompt"] == "You are a helpful agent."
+        assert "description" not in result
+        assert "tools" not in result
+
+    def test_name_derived_from_filename(self, tmp_path):
+        f = tmp_path / "security-reviewer.agent.md"
+        f.write_text("---\ndescription: Reviews security\n---\nCheck for vulns.", encoding="utf-8")
+        result = _parse_agent_file(f)
+        assert result["name"] == "security-reviewer"
+
+    def test_mcp_servers_key_normalised(self, tmp_path):
+        f = tmp_path / "mcp-agent.agent.md"
+        f.write_text(
+            "---\nname: mcp-agent\nmcp-servers:\n  my-server:\n    type: local\n    command: npx\n---\nDo things.",
+            encoding="utf-8",
+        )
+        result = _parse_agent_file(f)
+        assert "mcp_servers" in result
+        assert "my-server" in result["mcp_servers"]
+
+
+class TestFromCopilotConfig:
+    """Tests for CopilotAgent.from_copilot_config()."""
+
+    def test_empty_project_returns_defaults(self, tmp_path):
+        agent = CopilotAgent.from_copilot_config(tmp_path)
+        assert agent.instructions is None
+        assert agent.custom_agents == []
+
+    def test_loads_copilot_instructions(self, tmp_path):
+        github = tmp_path / ".github"
+        github.mkdir()
+        (github / "copilot-instructions.md").write_text("Always add type hints.", encoding="utf-8")
+        agent = CopilotAgent.from_copilot_config(tmp_path)
+        assert agent.instructions == "Always add type hints."
+
+    def test_loads_project_agents(self, tmp_path):
+        agents_dir = tmp_path / ".github" / "agents"
+        agents_dir.mkdir(parents=True)
+        (agents_dir / "tester.agent.md").write_text(
+            "---\nname: tester\ndescription: Writes tests\n---\nWrite tests.",
+            encoding="utf-8",
+        )
+        agent = CopilotAgent.from_copilot_config(tmp_path)
+        assert len(agent.custom_agents) == 1
+        assert agent.custom_agents[0]["name"] == "tester"
+        assert agent.custom_agents[0]["prompt"] == "Write tests."
+
+    def test_global_agents_loaded(self, tmp_path):
+        global_dir = tmp_path / "global_agents"
+        global_dir.mkdir()
+        (global_dir / "global-helper.agent.md").write_text(
+            "---\nname: global-helper\n---\nI am global.", encoding="utf-8"
+        )
+        agent = CopilotAgent.from_copilot_config(tmp_path, _global_agents_dir=global_dir)
+        assert len(agent.custom_agents) == 1
+        assert agent.custom_agents[0]["name"] == "global-helper"
+
+    def test_project_agent_overrides_global(self, tmp_path):
+        global_dir = tmp_path / "global_agents"
+        global_dir.mkdir()
+        (global_dir / "helper.agent.md").write_text(
+            "---\nname: helper\n---\nGlobal version.", encoding="utf-8"
+        )
+        agents_dir = tmp_path / ".github" / "agents"
+        agents_dir.mkdir(parents=True)
+        (agents_dir / "helper.agent.md").write_text(
+            "---\nname: helper\n---\nProject version.", encoding="utf-8"
+        )
+        agent = CopilotAgent.from_copilot_config(tmp_path, _global_agents_dir=global_dir)
+        assert len(agent.custom_agents) == 1
+        assert agent.custom_agents[0]["prompt"] == "Project version."
+
+    def test_include_global_false_skips_global(self, tmp_path):
+        global_dir = tmp_path / "global_agents"
+        global_dir.mkdir()
+        (global_dir / "global-helper.agent.md").write_text(
+            "---\nname: global-helper\n---\nI am global.", encoding="utf-8"
+        )
+        agent = CopilotAgent.from_copilot_config(
+            tmp_path, include_global=False, _global_agents_dir=global_dir
+        )
+        assert agent.custom_agents == []
+
+    def test_overrides_applied(self, tmp_path):
+        github = tmp_path / ".github"
+        github.mkdir()
+        (github / "copilot-instructions.md").write_text("Base instructions.", encoding="utf-8")
+        agent = CopilotAgent.from_copilot_config(
+            tmp_path, instructions="Override instructions.", model="claude-opus-4.5"
+        )
+        assert agent.instructions == "Override instructions."
+        assert agent.model == "claude-opus-4.5"
