@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pytest-codingagents"
-version = "0.1.0"
+version = "0.1.1"
 description = "Pytest plugin for testing real coding agents via their SDK"
 readme = "README.md"
 license = { text = "MIT" }
