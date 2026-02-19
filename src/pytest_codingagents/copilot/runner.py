@@ -100,7 +100,7 @@ def _is_transient_error(error: str | None) -> bool:
     return any(pattern in error for pattern in _TRANSIENT_PATTERNS)
 
 
-async def _run_copilot_once(agent: CopilotAgent, prompt: str) -> CopilotResult:
+async def _run_copilot_once(agent: "CopilotAgent", prompt: str) -> "CopilotResult":
     """Execute a single attempt of a prompt against GitHub Copilot."""
     client_options: dict[str, Any] = {
         "cwd": agent.working_directory or ".",
@@ -126,6 +126,10 @@ async def _run_copilot_once(agent: CopilotAgent, prompt: str) -> CopilotResult:
 
         # Build session config from agent
         session_config = agent.build_session_config()
+
+        # Apply the persona: injects polyfill tools and system-message
+        # additions that match the target IDE environment.
+        agent.persona.apply(agent, session_config, mapper)
 
         # Install permission handler if auto_confirm is enabled
         if agent.auto_confirm:

@@ -4,6 +4,7 @@
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
+| `persona` | `Persona` | `VSCodePersona()` | IDE runtime persona — controls polyfill tools and auto-loads IDE-specific custom instructions. See [IDE Personas](../how-to/ide-personas.md) |
 | `name` | `str` | `"copilot"` | Agent identifier for reports |
 | `model` | `str \| None` | `None` | Model to use (e.g., `claude-sonnet-4`) |
 | `instructions` | `str \| None` | `None` | Instructions for the agent |

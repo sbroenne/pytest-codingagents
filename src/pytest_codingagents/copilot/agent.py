@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import yaml
+
+if TYPE_CHECKING:
+    from pytest_codingagents.copilot.personas import Persona
 
 
 def _parse_agent_file(path: Path) -> dict[str, Any]:
@@ -130,6 +133,12 @@ class CopilotAgent:
     # SDK passthrough for unmapped fields
     extra_config: dict[str, Any] = field(default_factory=dict)
 
+    # IDE persona — controls which polyfill tools are injected to simulate
+    # the target runtime environment (VS Code, Claude Code, Copilot CLI, etc.)
+    # VSCodePersona is the default: it polyfills runSubagent when custom_agents
+    # are present, matching VS Code's native behaviour.
+    persona: "Persona" = field(default_factory=lambda: _default_persona())
+
     def build_session_config(self) -> dict[str, Any]:
         """Build a SessionConfig dict for the Copilot SDK.
 
@@ -243,11 +252,11 @@ class CopilotAgent:
         if instructions_file.exists():
             instructions = instructions_file.read_text(encoding="utf-8").strip() or None
 
-        # Load custom agents
+        # Load custom agents — recursive so subagents/ subdirectories are included
         agents: list[dict[str, Any]] = []
         agents_dir = github_dir / "agents"
         if agents_dir.exists():
-            for agent_file in sorted(agents_dir.glob("*.agent.md")):
+            for agent_file in sorted(agents_dir.rglob("*.agent.md")):
                 agents.append(_parse_agent_file(agent_file))
 
         config: dict[str, Any] = {
@@ -256,3 +265,14 @@ class CopilotAgent:
         }
         config.update(overrides)
         return cls(**config)
+
+
+def _default_persona() -> "Persona":
+    """Return the default persona (VSCodePersona).
+
+    Defined as a function to avoid a circular-import at module level:
+    ``personas.py`` imports ``agent.py``, so we defer the import.
+    """
+    from pytest_codingagents.copilot.personas import VSCodePersona  # noqa: PLC0415
+
+    return VSCodePersona()

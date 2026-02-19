@@ -9,7 +9,9 @@ test fixture project, a shared team config repo, or anything else.
 | Source | Path (relative to the root you point at) | Maps to |
 |--------|------------------------------------------|---------|
 | Instructions | `.github/copilot-instructions.md` | `instructions` |
-| Custom agents | `.github/agents/*.agent.md` | `custom_agents` |
+| Custom agents | `.github/agents/**/*.agent.md` (recursive) | `custom_agents` |
+
+Agent files are discovered recursively — agents in `subagents/` subdirectories (e.g. `.github/agents/hve-core/subagents/`) are included automatically.
 
 ## Basic usage
 
@@ -102,6 +104,7 @@ The Markdown body becomes the agent's prompt.
 
 ## See also
 
+- [IDE Personas Guide](ide-personas.md) — Simulate VS Code, Claude Code, or Copilot CLI environments
 - [A/B Testing Guide](ab-testing.md)
 - [GitHub Copilot custom agents docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli)
 - [Custom agents configuration reference](https://docs.github.com/en/copilot/reference/custom-agents-configuration)
