@@ -100,3 +100,64 @@ class TestOptimizeInstructionIntegration:
             f"Instruction: {suggestion.instruction}\n"
             f"Reasoning: {suggestion.reasoning}"
         )
+
+    async def test_full_optimize_loop(self, copilot_run, tmp_path):
+        """Full test→optimize→test loop: weak instruction fails, improved instruction passes.
+
+        This is the hero use case: verify that optimize_instruction() produces
+        an instruction that actually fixes a failing criterion.
+
+        Round 1: Run with a deliberately weak instruction (no docstring mandate).
+                 The agent writes code but skips docstrings.
+        Optimize: Call optimize_instruction() with the failing criterion.
+                  Receive a suggested instruction that mandates docstrings.
+        Round 2: Run again with the improved instruction.
+                 The agent now includes docstrings — criterion passes.
+        """
+        CRITERION = "Every function must include a Google-style docstring."
+        TASK = "Create calculator.py with add(a, b) and subtract(a, b) functions."
+
+        # --- Round 1: weak instruction, expect no docstrings ---
+        weak_agent = CopilotAgent(
+            name="weak-coder",
+            instructions="Write minimal Python code. No comments or documentation needed.",
+            working_directory=str(tmp_path / "round1"),
+        )
+        (tmp_path / "round1").mkdir()
+        result1 = await copilot_run(weak_agent, TASK)
+        assert result1.success, "Round 1 Copilot run failed"
+
+        code1 = result1.file("calculator.py") or ""
+        has_docstrings_round1 = '"""' in code1 or "'''" in code1
+
+        # --- Optimize ---
+        suggestion = await optimize_instruction(
+            weak_agent.instructions or "",
+            result1,
+            CRITERION,
+        )
+        assert suggestion.instruction.strip(), "Optimizer returned empty instruction"
+        print(f"\n💡 Suggested instruction:\n{suggestion}")  # visible in -s output
+
+        # --- Round 2: improved instruction ---
+        improved_agent = CopilotAgent(
+            name="improved-coder",
+            instructions=suggestion.instruction,
+            working_directory=str(tmp_path / "round2"),
+        )
+        (tmp_path / "round2").mkdir()
+        result2 = await copilot_run(improved_agent, TASK)
+        assert result2.success, "Round 2 Copilot run failed"
+
+        code2 = result2.file("calculator.py") or ""
+        has_docstrings_round2 = '"""' in code2 or "'''" in code2
+
+        assert has_docstrings_round2, (
+            f"Round 2 code still has no docstrings after optimization.\n"
+            f"Suggested instruction: {suggestion.instruction}\n"
+            f"Round 2 code:\n{code2}"
+        )
+        print(
+            f"\n✅ Loop complete. "
+            f"Docstrings round 1: {has_docstrings_round1}, round 2: {has_docstrings_round2}"
+        )
