@@ -195,48 +195,47 @@ class CopilotAgent:
     @classmethod
     def from_copilot_config(
         cls,
-        project_path: str | Path = ".",
-        *,
-        include_global: bool = True,
-        _global_agents_dir: Path | None = None,
+        path: str | Path = ".",
         **overrides: Any,
     ) -> "CopilotAgent":
-        """Load a ``CopilotAgent`` from real GitHub Copilot config files.
+        """Load a ``CopilotAgent`` from a directory containing Copilot config files.
 
-        Discovers the following files automatically:
+        Looks for the following files under ``path``:
 
-        * **Project instructions** — ``.github/copilot-instructions.md``
-        * **Project custom agents** — ``.github/agents/*.agent.md``
-        * **Global custom agents** — ``~/.config/copilot/agents/*.agent.md``
-          (loaded when ``include_global=True``)
+        * ``.github/copilot-instructions.md`` → ``instructions``
+        * ``.github/agents/*.agent.md`` → ``custom_agents``
 
-        Project-level agents take precedence over global agents with the
-        same name.  Any keyword argument overrides the corresponding
-        ``CopilotAgent`` field after loading.
+        Point ``path`` at any directory — your production project, a dedicated
+        test fixture project, or a shared team config repo.  Any keyword
+        argument overrides the loaded value.
 
         Args:
-            project_path: Path to the project root. Defaults to the current
+            path: Root directory to load config from. Defaults to the current
                 working directory.
-            include_global: When ``True`` (default), user-global agents from
-                ``~/.config/copilot/agents/`` are merged in as a fallback.
-            **overrides: Override any ``CopilotAgent`` field, e.g.
-                ``model="claude-opus-4.5"``.
+            **overrides: Override any ``CopilotAgent`` field after loading,
+                e.g. ``model="claude-opus-4.5"``.
 
         Returns:
             A ``CopilotAgent`` initialised from the discovered config files.
 
         Example::
 
-            # Mirror the exact Copilot config used in production
+            # Load from the current project (production config as baseline)
             baseline = CopilotAgent.from_copilot_config()
 
-            # A/B test: production config vs. tightened instructions
+            # A/B test: same config, one instruction changed
             treatment = CopilotAgent.from_copilot_config(
                 instructions="Always add type hints.",
             )
+
+            # Load from a dedicated test-fixture project
+            agent = CopilotAgent.from_copilot_config("tests/fixtures/strict-agent")
+
+            # Load from a shared team agent library
+            agent = CopilotAgent.from_copilot_config("/shared/team/copilot-config")
         """
-        project_path = Path(project_path).resolve()
-        github_dir = project_path / ".github"
+        root = Path(path).resolve()
+        github_dir = root / ".github"
 
         # Load repository-wide instructions
         instructions: str | None = None
@@ -244,25 +243,16 @@ class CopilotAgent:
         if instructions_file.exists():
             instructions = instructions_file.read_text(encoding="utf-8").strip() or None
 
-        # Collect agents: global first, project overrides by name
-        agents_by_name: dict[str, dict[str, Any]] = {}
-
-        if include_global:
-            global_dir = _global_agents_dir or (Path.home() / ".config" / "copilot" / "agents")
-            if global_dir.exists():
-                for agent_file in sorted(global_dir.glob("*.agent.md")):
-                    parsed = _parse_agent_file(agent_file)
-                    agents_by_name[parsed["name"]] = parsed
-
-        project_agents_dir = github_dir / "agents"
-        if project_agents_dir.exists():
-            for agent_file in sorted(project_agents_dir.glob("*.agent.md")):
-                parsed = _parse_agent_file(agent_file)
-                agents_by_name[parsed["name"]] = parsed
+        # Load custom agents
+        agents: list[dict[str, Any]] = []
+        agents_dir = github_dir / "agents"
+        if agents_dir.exists():
+            for agent_file in sorted(agents_dir.glob("*.agent.md")):
+                agents.append(_parse_agent_file(agent_file))
 
         config: dict[str, Any] = {
             "instructions": instructions,
-            "custom_agents": list(agents_by_name.values()),
+            "custom_agents": agents,
         }
         config.update(overrides)
         return cls(**config)

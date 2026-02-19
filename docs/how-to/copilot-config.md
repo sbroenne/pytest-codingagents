@@ -1,34 +1,32 @@
 # Load from Copilot Config Files
 
-`CopilotAgent.from_copilot_config()` builds a `CopilotAgent` directly from
-your real GitHub Copilot configuration files — no manual copy-paste of
-instructions or agent definitions required.
+`CopilotAgent.from_copilot_config()` builds a `CopilotAgent` from any directory
+that contains GitHub Copilot config files — your production project, a dedicated
+test fixture project, a shared team config repo, or anything else.
 
 ## What it loads
 
-| Source | Path | Maps to |
-|--------|------|---------|
-| Project instructions | `.github/copilot-instructions.md` | `instructions` |
-| Project custom agents | `.github/agents/*.agent.md` | `custom_agents` |
-| Global custom agents | `~/.config/copilot/agents/*.agent.md` | `custom_agents` |
-
-**Precedence:** project-level agents override global agents with the same name.
+| Source | Path (relative to the root you point at) | Maps to |
+|--------|------------------------------------------|---------|
+| Instructions | `.github/copilot-instructions.md` | `instructions` |
+| Custom agents | `.github/agents/*.agent.md` | `custom_agents` |
 
 ## Basic usage
 
 ```python
 from pytest_codingagents import CopilotAgent
 
+# Current directory (default)
 agent = CopilotAgent.from_copilot_config()
-```
 
-By default `project_path` is the current working directory and global agents
-are included (`include_global=True`).
+# Explicit path
+agent = CopilotAgent.from_copilot_config("path/to/any/dir")
+```
 
 ## A/B testing with your production config
 
-The most powerful use case is using your real config as the **baseline** and
-comparing it against a variant — no duplication needed:
+The main use case: use your real config as the **baseline** and compare
+against a variant — no duplication needed.
 
 ```python
 import pytest
@@ -36,30 +34,46 @@ from pytest_codingagents import CopilotAgent
 
 @pytest.fixture
 def baseline():
-    """Your actual production Copilot config."""
+    """The actual production Copilot config."""
     return CopilotAgent.from_copilot_config()
 
 @pytest.fixture
 def treatment():
-    """Same config, but with tightened instructions."""
+    """Same config, one instruction changed."""
     return CopilotAgent.from_copilot_config(
         instructions="Always add type hints to every function.",
     )
 ```
 
-## Override specific fields
+## Point at any directory
+
+There is no concept of "global" vs "project" — just a path. Point it
+wherever your config lives:
+
+```python
+# Production project
+baseline = CopilotAgent.from_copilot_config("/src/my-app")
+
+# Dedicated test fixture project with stricter agents
+treatment = CopilotAgent.from_copilot_config("tests/fixtures/strict-agents")
+
+# Shared team config library (checked into a separate repo)
+shared = CopilotAgent.from_copilot_config("/shared/team/copilot-config")
+```
+
+## Override fields after loading
 
 Any keyword argument overrides the loaded value:
 
 ```python
-# Use production config but force a specific model
+# Load from the current project but force a specific model
 agent = CopilotAgent.from_copilot_config(model="claude-opus-4.5")
 
-# Skip global agents
-agent = CopilotAgent.from_copilot_config(include_global=False)
-
-# Load config from a different project
-agent = CopilotAgent.from_copilot_config("../other-project")
+# Load from a different path and override instructions
+agent = CopilotAgent.from_copilot_config(
+    "tests/fixtures/baseline",
+    instructions="Tightened: always add type hints.",
+)
 ```
 
 ## Custom agent file format
@@ -85,18 +99,6 @@ You are a testing specialist. Your responsibilities:
 
 The frontmatter supports `name`, `description`, `tools`, and `mcp-servers`.
 The Markdown body becomes the agent's prompt.
-
-## Config file locations
-
-GitHub Copilot CLI uses two levels of custom agent config:
-
-| Level | Location |
-|-------|----------|
-| Project | `.github/agents/*.agent.md` |
-| Global (user) | `~/.config/copilot/agents/*.agent.md` |
-
-Create agents in the CLI with `/agent → Create new agent` and choose
-**Project** or **User** scope.
 
 ## See also
 

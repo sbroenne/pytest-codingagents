@@ -190,7 +190,7 @@ class TestParseAgentFile:
 class TestFromCopilotConfig:
     """Tests for CopilotAgent.from_copilot_config()."""
 
-    def test_empty_project_returns_defaults(self, tmp_path):
+    def test_empty_dir_returns_defaults(self, tmp_path):
         agent = CopilotAgent.from_copilot_config(tmp_path)
         assert agent.instructions is None
         assert agent.custom_agents == []
@@ -202,7 +202,7 @@ class TestFromCopilotConfig:
         agent = CopilotAgent.from_copilot_config(tmp_path)
         assert agent.instructions == "Always add type hints."
 
-    def test_loads_project_agents(self, tmp_path):
+    def test_loads_agents(self, tmp_path):
         agents_dir = tmp_path / ".github" / "agents"
         agents_dir.mkdir(parents=True)
         (agents_dir / "tester.agent.md").write_text(
@@ -214,41 +214,17 @@ class TestFromCopilotConfig:
         assert agent.custom_agents[0]["name"] == "tester"
         assert agent.custom_agents[0]["prompt"] == "Write tests."
 
-    def test_global_agents_loaded(self, tmp_path):
-        global_dir = tmp_path / "global_agents"
-        global_dir.mkdir()
-        (global_dir / "global-helper.agent.md").write_text(
-            "---\nname: global-helper\n---\nI am global.", encoding="utf-8"
-        )
-        agent = CopilotAgent.from_copilot_config(tmp_path, _global_agents_dir=global_dir)
-        assert len(agent.custom_agents) == 1
-        assert agent.custom_agents[0]["name"] == "global-helper"
-
-    def test_project_agent_overrides_global(self, tmp_path):
-        global_dir = tmp_path / "global_agents"
-        global_dir.mkdir()
-        (global_dir / "helper.agent.md").write_text(
-            "---\nname: helper\n---\nGlobal version.", encoding="utf-8"
-        )
-        agents_dir = tmp_path / ".github" / "agents"
+    def test_loads_from_custom_path(self, tmp_path):
+        """Any arbitrary directory can be pointed at — not just 'the project'."""
+        config_dir = tmp_path / "shared-team-config"
+        agents_dir = config_dir / ".github" / "agents"
         agents_dir.mkdir(parents=True)
-        (agents_dir / "helper.agent.md").write_text(
-            "---\nname: helper\n---\nProject version.", encoding="utf-8"
+        (agents_dir / "reviewer.agent.md").write_text(
+            "---\nname: reviewer\n---\nReview code.", encoding="utf-8"
         )
-        agent = CopilotAgent.from_copilot_config(tmp_path, _global_agents_dir=global_dir)
+        agent = CopilotAgent.from_copilot_config(config_dir)
         assert len(agent.custom_agents) == 1
-        assert agent.custom_agents[0]["prompt"] == "Project version."
-
-    def test_include_global_false_skips_global(self, tmp_path):
-        global_dir = tmp_path / "global_agents"
-        global_dir.mkdir()
-        (global_dir / "global-helper.agent.md").write_text(
-            "---\nname: global-helper\n---\nI am global.", encoding="utf-8"
-        )
-        agent = CopilotAgent.from_copilot_config(
-            tmp_path, include_global=False, _global_agents_dir=global_dir
-        )
-        assert agent.custom_agents == []
+        assert agent.custom_agents[0]["name"] == "reviewer"
 
     def test_overrides_applied(self, tmp_path):
         github = tmp_path / ".github"
@@ -259,3 +235,16 @@ class TestFromCopilotConfig:
         )
         assert agent.instructions == "Override instructions."
         assert agent.model == "claude-opus-4.5"
+
+    def test_multiple_agents_sorted(self, tmp_path):
+        agents_dir = tmp_path / ".github" / "agents"
+        agents_dir.mkdir(parents=True)
+        (agents_dir / "b-agent.agent.md").write_text(
+            "---\nname: b-agent\n---\nB.", encoding="utf-8"
+        )
+        (agents_dir / "a-agent.agent.md").write_text(
+            "---\nname: a-agent\n---\nA.", encoding="utf-8"
+        )
+        agent = CopilotAgent.from_copilot_config(tmp_path)
+        names = [a["name"] for a in agent.custom_agents]
+        assert names == ["a-agent", "b-agent"]  # sorted by filename
