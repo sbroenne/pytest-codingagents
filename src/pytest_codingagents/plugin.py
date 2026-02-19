@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-# Re-export the fixture so pytest discovers it via the plugin entry point.
-from pytest_codingagents.copilot.fixtures import copilot_run
+# Re-export fixtures so pytest discovers them via the plugin entry point.
+from pytest_codingagents.copilot.fixtures import ab_run, copilot_run
 
 if TYPE_CHECKING:
     from _pytest.nodes import Item
 
-__all__ = ["copilot_run"]
+__all__ = ["ab_run", "copilot_run"]
 
 _ANALYSIS_PROMPT_PATH = Path(__file__).parent / "prompts" / "coding_agent_analysis.md"
 

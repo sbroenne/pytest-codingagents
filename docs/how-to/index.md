@@ -3,6 +3,7 @@
 Practical guides for common tasks.
 
 - [A/B Testing](ab-testing.md) — Prove that your config changes actually make a difference
+- [Optimize Instructions](optimize.md) — Use AI to turn test failures into actionable instruction improvements
 - [Assertions](assertions.md) — File helpers and semantic assertions with `llm_assert`
 - [Load from Copilot Config](copilot-config.md) — Build a `CopilotAgent` from your real `.github/` config files
 - [Skill Testing](skills.md) — Measure the impact of domain knowledge

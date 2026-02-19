@@ -4,9 +4,32 @@ The core use case of pytest-codingagents is **A/B testing**: run the same task w
 
 This stops cargo cult configuration — copying instructions and skills from blog posts without knowing if they work.
 
-## The Pattern
+## The `ab_run` Fixture
 
-Every A/B test follows the same structure:
+The `ab_run` fixture is the fastest way to write an A/B test. It handles directory isolation, sequential execution, and aitest reporting automatically:
+
+```python
+from pytest_codingagents import CopilotAgent
+
+
+async def test_docstring_instruction(ab_run):
+    baseline = CopilotAgent(instructions="Write Python code.")
+    treatment = CopilotAgent(
+        instructions="Write Python code. Add Google-style docstrings to every function."
+    )
+
+    b, t = await ab_run(baseline, treatment, "Create math.py with add(a, b) and subtract(a, b).")
+
+    assert b.success and t.success
+    assert '"""' not in b.file("math.py"), "Baseline should not have docstrings"
+    assert '"""' in t.file("math.py"), "Treatment: docstring instruction was ignored"
+```
+
+`ab_run` automatically creates `baseline/` and `treatment/` subdirectories under `tmp_path`, overrides `working_directory` on each agent (so they never share a workspace), and runs them sequentially.
+
+## The Manual Pattern
+
+For full control — custom paths, conditional logic, more than two configs — use `copilot_run` directly:
 
 ```python
 from pytest_codingagents import CopilotAgent
@@ -40,8 +63,6 @@ async def test_config_a_vs_config_b(copilot_run, tmp_path):
 ```
 
 **The key rule**: assert something that is present in Config B *because of the change* and absent (or different) in Config A.
-
----
 
 ## Testing Instructions
 
