@@ -278,6 +278,12 @@ def _build_agents_block(custom_agents: list[dict[str, Any]], tool_name: str = "r
             "appropriate agent from this list."
         ),
         f"Use the {tool_name} tool with the agent name to run the subagent.",
+        (
+            f"You are an orchestrator. All task work must be delegated to "
+            f"subagents via the `{tool_name}` tool. "
+            f"Do not implement, edit files, or perform task work directly — "
+            f"delegate every phase of work to the appropriate subagent."
+        ),
     ]
     for a in custom_agents:
         lines.append("<agent>")
