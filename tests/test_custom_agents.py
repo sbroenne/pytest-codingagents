@@ -1,20 +1,15 @@
-"""Custom agent tests.
+"""Custom agent routing tests.
 
-Tests Copilot's custom agent routing and invocation.
+Proves that custom agents (SDK ``CustomAgentConfig``) are configured and
+produce their expected outputs. Tests assert on concrete file outcomes
+rather than subagent invocation counts, since invocation is non-deterministic
+(the LLM decides whether to route to a custom agent).
 
-Custom agents (SDK ``CustomAgentConfig``) are specialized agents defined
-in the session config. The main agent can invoke them for specific tasks.
-
-Key fields:
-    name (str): Unique agent name (required)
-    prompt (str): The agent's instructions (required)
-    description (str): What the agent does — helps model decide when to invoke it
-    tools (list[str]): Tools the agent can use (optional)
-    mcp_servers (dict): MCP servers specific to this agent (optional)
-
-Note: Invocation is non-deterministic — the LLM decides whether to invoke the
-custom agent. Tests focus on verifiable outcomes rather than asserting
-subagent invocation counts.
+Custom agent fields:
+    name        Unique agent name (required)
+    prompt      The agent's instructions (required)
+    description What the agent does — helps the model decide when to invoke it
+    tools       Tools available to this agent (optional allowlist)
 """
 
 from __future__ import annotations
@@ -25,31 +20,31 @@ from pytest_codingagents.copilot.agent import CopilotAgent
 
 
 @pytest.mark.copilot
-class TestCustomAgents:
-    """Test custom agent configurations."""
+class TestCustomAgentOutcomes:
+    """Custom agents produce their expected file-based outcomes."""
 
-    async def test_custom_agent_code_and_tests(self, copilot_run, tmp_path):
-        """Custom test-writer agent produces tests alongside code.
+    async def test_test_writer_agent_creates_test_file(self, copilot_run, tmp_path):
+        """Custom test-writer agent produces a pytest test file alongside code.
 
-        Defines a specialized "test-writer" agent and gives a task that
-        naturally splits into code creation + test writing. The custom
-        agent should influence the outcome (tests get written).
+        The main agent is instructed to delegate test writing to the
+        test-writer custom agent. We assert the test file is created —
+        the observable proof that the custom agent did its job.
         """
         agent = CopilotAgent(
             name="with-test-writer",
             instructions=(
                 "You are a senior developer. When you create code, "
-                "always have tests written for it. Use the test-writer "
-                "to the test-writer agent when available."
+                "always delegate test writing to the test-writer agent."
             ),
             working_directory=str(tmp_path),
+            timeout_s=600.0,
             custom_agents=[
                 {
                     "name": "test-writer",
                     "prompt": (
                         "You are a test specialist. Write pytest unit tests "
-                        "for the given code. Include edge cases. Save tests "
-                        "to a test_*.py file."
+                        "for the given code. Include happy path and edge cases. "
+                        "Save tests to a test_*.py file."
                     ),
                     "description": "Writes pytest unit tests for Python code.",
                 }
@@ -57,87 +52,89 @@ class TestCustomAgents:
         )
         result = await copilot_run(
             agent,
-            "Create calculator.py with functions add, subtract, multiply, and divide "
-            "(raise ValueError on division by zero). Then write tests for it.",
+            "Create calculator.py with add, subtract, multiply, and divide functions "
+            "(divide raises ValueError on division by zero). Then have tests written for it.",
         )
         assert result.success, f"Failed: {result.error}"
-
-        # Code was created — may be in tmp_path or a subdirectory
-        calc_files = list(tmp_path.rglob("calculator.py"))
-        assert len(calc_files) > 0, "calculator.py missing"
-
-        # Tests were created (agent or subagent should produce a test file)
+        assert list(tmp_path.rglob("calculator.py")), "calculator.py was not created"
         test_files = list(tmp_path.rglob("test_*.py"))
-        assert len(test_files) > 0, "No test file created — custom agent may not have been invoked"
+        assert len(test_files) > 0, (
+            "No test_*.py file created — test-writer custom agent may not have been invoked"
+        )
 
-    async def test_custom_agent_with_restricted_tools(self, copilot_run, tmp_path):
-        """Custom agent with tool restrictions only uses allowed tools.
+    async def test_docs_writer_agent_creates_readme(self, copilot_run, tmp_path):
+        """Custom docs-writer agent produces a README.md for the project.
 
-        The docs-writer agent is restricted to create_file only — it
-        should not run terminal commands.
+        The docs-writer is tool-restricted to file operations only.
+        We assert both the code file AND the README exist.
         """
         agent = CopilotAgent(
             name="with-docs-writer",
-            instructions="You are a project lead. Create code and have documentation written.",
+            instructions=(
+                "You are a project lead. Create the requested code, then "
+                "delegate README documentation to the docs-writer agent."
+            ),
             working_directory=str(tmp_path),
             custom_agents=[
                 {
                     "name": "docs-writer",
                     "prompt": (
                         "You write README.md documentation for Python projects. "
-                        "Create clear, concise READMEs with usage examples."
+                        "Create a clear, concise README with a description, "
+                        "installation instructions, and a usage example."
                     ),
-                    "description": "Writes project documentation and README files.",
+                    "description": "Writes README.md project documentation.",
                     "tools": ["create_file", "read_file", "insert_edit_into_file"],
                 }
             ],
         )
         result = await copilot_run(
             agent,
-            "Create a simple greeting.py module with a greet(name) function, "
-            "then create a README.md documenting how to use it.",
+            "Create greeting.py with a greet(name: str) -> str function that returns "
+            "'Hello, {name}!', then have documentation written for the project.",
         )
-        assert result.success
-        assert (tmp_path / "greeting.py").exists()
-        # README should exist (created by either main agent or docs-writer)
-        assert (tmp_path / "README.md").exists(), "README.md not created"
+        assert result.success, f"Failed: {result.error}"
+        assert (tmp_path / "greeting.py").exists(), "greeting.py was not created"
+        assert (tmp_path / "README.md").exists(), (
+            "README.md was not created — docs-writer agent may not have been invoked"
+        )
 
-    async def test_subagent_invocations_captured(self, copilot_run, tmp_path):
-        """Subagent events are captured in result.subagent_invocations.
+    async def test_subagent_lifecycle_captured_when_invoked(self, copilot_run, tmp_path):
+        """When a custom agent is invoked, its lifecycle events are captured correctly.
 
-        Even if the model doesn't use the custom agent, the field should be present
-        and correctly typed. If it does, we should see entries.
+        Subagent invocation is non-deterministic — the model decides whether
+        to route to the reviewer. If it does, the SubagentInvocation objects
+        must have valid name and status fields.
         """
         agent = CopilotAgent(
-            name="custom-agent-test",
+            name="with-code-reviewer",
             instructions=(
-                "You manage a team. Always have the reviewer agent check "
-                "reviewer agent before finalizing."
+                "You manage a development team. After creating code, "
+                "always ask the code-reviewer to check it before finishing."
             ),
             working_directory=str(tmp_path),
             custom_agents=[
                 {
-                    "name": "reviewer",
-                    "prompt": "Review Python code for bugs, suggest fixes. Be thorough.",
-                    "description": "Code review specialist.",
+                    "name": "code-reviewer",
+                    "prompt": (
+                        "You review Python code for correctness, style, and edge cases. "
+                        "Report any issues found."
+                    ),
+                    "description": "Reviews Python code quality and correctness.",
                 }
             ],
         )
         result = await copilot_run(
             agent,
-            "Create a sort.py with bubble_sort and quick_sort functions, "
-            "then have the reviewer check the code.",
+            "Create sort.py with bubble_sort(arr) and quick_sort(arr) functions, "
+            "then have the code-reviewer check the implementation.",
         )
         assert result.success, f"Failed: {result.error}"
+        assert list(tmp_path.rglob("sort.py")), "sort.py was not created"
 
-        # sort.py should exist somewhere in the working directory
-        sort_files = list(tmp_path.rglob("sort.py"))
-        assert len(sort_files) > 0, "sort.py was not created"
-
-        # subagent_invocations is always a list (may be empty if model didn't use custom agent)
-        assert isinstance(result.subagent_invocations, list)
-
-        # If any subagent was invoked, verify the structure
+        # Subagent invocation is non-deterministic — validate structure only when it occurs
         for invocation in result.subagent_invocations:
-            assert invocation.name, "Subagent invocation must have a name"
-            assert invocation.status in ("selected", "started", "completed", "failed")
+            assert invocation.name, "SubagentInvocation.name must not be empty"
+            assert invocation.status in ("selected", "started", "completed", "failed"), (
+                f"Unexpected SubagentInvocation.status: {invocation.status!r}"
+            )

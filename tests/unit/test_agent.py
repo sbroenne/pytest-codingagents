@@ -49,8 +49,8 @@ class TestBuildSessionConfig:
         agent = CopilotAgent(name="minimal")
         config = agent.build_session_config()
         assert isinstance(config, dict)
-        # Should not include None fields
-        assert "model" not in config or config.get("model") is None
+        # None fields should be omitted entirely
+        assert "model" not in config
 
     def test_full_config(self):
         agent = CopilotAgent(
@@ -107,3 +107,40 @@ class TestBuildSessionConfig:
         )
         config = agent.build_session_config()
         assert config["customField"] == "value"
+
+    def test_skill_directories_included(self):
+        agent = CopilotAgent(
+            name="skilled",
+            skill_directories=["/path/to/skills", "/other/skills"],
+        )
+        config = agent.build_session_config()
+        assert config["skill_directories"] == ["/path/to/skills", "/other/skills"]
+
+    def test_skill_directories_omitted_when_empty(self):
+        agent = CopilotAgent(name="no-skills")
+        config = agent.build_session_config()
+        assert "skill_directories" not in config
+
+    def test_disabled_skills_included(self):
+        agent = CopilotAgent(
+            name="restrict",
+            disabled_skills=["code-search"],
+        )
+        config = agent.build_session_config()
+        assert config["disabled_skills"] == ["code-search"]
+
+    def test_custom_agents_included(self):
+        agent = CopilotAgent(
+            name="multi",
+            custom_agents=[
+                {"name": "test-writer", "prompt": "Write tests", "tools": ["create_file"]}
+            ],
+        )
+        config = agent.build_session_config()
+        assert len(config["custom_agents"]) == 1
+        assert config["custom_agents"][0]["name"] == "test-writer"
+
+    def test_custom_agents_omitted_when_empty(self):
+        agent = CopilotAgent(name="no-custom")
+        config = agent.build_session_config()
+        assert "custom_agents" not in config

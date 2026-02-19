@@ -80,12 +80,15 @@ class TestFileOperations:
         assert result.success, f"{model} failed: {result.error}"
 
         refactored = messy.read_text()
-        # Should have improved naming or added type hints or docstring
-        has_improvement = (
-            "def f(" not in refactored  # renamed function
-            or '"""' in refactored  # added docstring
-            or "->" in refactored  # added return type hint
-            or ": int" in refactored  # added param type hint
+        # The agent should have added documentation — type hints and/or a docstring.
+        # Renaming is optional (a backward-compat alias is a valid refactoring choice).
+        has_documentation = (
+            '"""' in refactored
+            or "->" in refactored
+            or ": int" in refactored
             or ": float" in refactored
         )
-        assert has_improvement, f"{model}: no visible improvement in refactored code"
+        assert has_documentation, (
+            f"{model}: no type hints or docstring added during refactor.\n"
+            f"Refactored content:\n{refactored}"
+        )

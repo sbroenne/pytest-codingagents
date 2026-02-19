@@ -42,4 +42,5 @@ class TestMatrix:
         path = tmp_path / "string_utils.py"
         assert path.exists()
         content = path.read_text()
-        assert "reverse" in content
+        for fn in ("reverse", "capitalize_words", "count_vowels"):
+            assert fn in content, f"{model}/{style}: function '{fn}' not found in string_utils.py"
