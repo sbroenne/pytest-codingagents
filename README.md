@@ -14,7 +14,7 @@ pytest-codingagents gives you a complete **test→optimize→test loop** for Git
 4. **A/B confirm** — use `ab_run` to prove the change actually helps
 5. **Ship it** — you now have evidence, not vibes
 
-Currently supports **GitHub Copilot** via [copilot-sdk](https://www.npmjs.com/package/github-copilot-sdk). More agents (Claude Code, etc.) coming soon.
+Currently supports **GitHub Copilot** via [copilot-sdk](https://www.npmjs.com/package/github-copilot-sdk) with **IDE personas** for VS Code, Claude Code, and Copilot CLI environments.
 
 ```python
 from pytest_codingagents import CopilotAgent, optimize_instruction

@@ -274,6 +274,31 @@ class EventMapper:
         result_text = tc.result if tc else str(result_data)
         self._turns.append(Turn(role="tool", content=f"[{tool_name}] {result_text or ''}"))
 
+    # ── Subagent recording (used by runSubagent tool handler) ──
+
+    def record_subagent_start(self, name: str) -> None:
+        """Record a subagent invocation dispatched via the runSubagent tool."""
+        self._subagent_start_times[name] = time.monotonic()
+        self._subagents.append(SubagentInvocation(name=name, status="started"))
+
+    def record_subagent_complete(self, name: str) -> None:
+        """Mark a previously started subagent invocation as completed."""
+        start = self._subagent_start_times.pop(name, None)
+        duration = (time.monotonic() - start) * 1000 if start else None
+        for sa in self._subagents:
+            if sa.name == name and sa.status == "started":
+                sa.status = "completed"
+                sa.duration_ms = duration
+                return
+
+    def record_subagent_failed(self, name: str) -> None:
+        """Mark a previously started subagent invocation as failed."""
+        self._subagent_start_times.pop(name, None)
+        for sa in self._subagents:
+            if sa.name == name and sa.status == "started":
+                sa.status = "failed"
+                return
+
     # ── Subagent events ──
 
     def _handle_subagent_selected(self, event: SessionEvent) -> None:
