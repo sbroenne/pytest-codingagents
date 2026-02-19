@@ -1,29 +1,29 @@
-"""Result types for Copilot agent execution."""
+"""Result types for Copilot agent execution.
+
+Turn and ToolCall are re-exported from pytest-aitest's core.result module
+to avoid duplication. Copilot-specific types (SubagentInvocation, UsageInfo,
+CopilotResult) remain here.
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+# Re-export shared types from pytest-aitest so existing imports keep working:
+#   from pytest_codingagents.copilot.result import Turn, ToolCall
+from pytest_aitest.core.result import ToolCall, Turn
+
 if TYPE_CHECKING:
     from pytest_codingagents.copilot.agent import CopilotAgent
 
-
-@dataclass(slots=True)
-class ToolCall:
-    """A tool call made by Copilot."""
-
-    name: str
-    arguments: dict[str, Any] | str
-    result: str | None = None
-    error: str | None = None
-    duration_ms: float | None = None
-    tool_call_id: str | None = None
-
-    def __repr__(self) -> str:
-        status = "error" if self.error else "ok"
-        timing = f", {self.duration_ms:.1f}ms" if self.duration_ms else ""
-        return f"ToolCall({self.name}, {status}{timing})"
+__all__ = [
+    "CopilotResult",
+    "SubagentInvocation",
+    "ToolCall",
+    "Turn",
+    "UsageInfo",
+]
 
 
 @dataclass(slots=True)
@@ -48,24 +48,6 @@ class UsageInfo:
     cache_read_tokens: int = 0
     cost_usd: float = 0.0
     duration_ms: float = 0.0
-
-
-@dataclass(slots=True)
-class Turn:
-    """A single conversational turn."""
-
-    role: str  # "user", "assistant", "tool"
-    content: str
-    tool_calls: list[ToolCall] = field(default_factory=list)
-
-    @property
-    def text(self) -> str:
-        """Get the text content of this turn."""
-        return self.content
-
-    def __repr__(self) -> str:
-        preview = self.content[:50] + "..." if len(self.content) > 50 else self.content
-        return f"Turn({self.role}: {preview!r})"
 
 
 @dataclass(slots=True)

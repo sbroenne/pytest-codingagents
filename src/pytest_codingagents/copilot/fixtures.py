@@ -64,45 +64,25 @@ def _convert_to_aitest(
 
     Returns ``(AgentResult, Agent)`` tuple, or ``None`` if pytest-aitest
     is not installed.
+
+    Since CopilotResult already uses pytest-aitest's Turn and ToolCall types,
+    the turns can be passed through directly without rebuilding.
     """
     try:
         from pytest_aitest.core.agent import Agent, Provider
         from pytest_aitest.core.result import AgentResult
-        from pytest_aitest.core.result import ToolCall as AitestToolCall
-        from pytest_aitest.core.result import Turn as AitestTurn
 
-        # Convert turns
-        aitest_turns = []
-        for turn in result.turns:
-            aitest_tool_calls = [
-                AitestToolCall(
-                    name=tc.name,
-                    arguments=tc.arguments if isinstance(tc.arguments, dict) else {},
-                    result=tc.result,
-                    error=tc.error,
-                    duration_ms=tc.duration_ms,
-                )
-                for tc in turn.tool_calls
-            ]
-            aitest_turns.append(
-                AitestTurn(
-                    role=turn.role,
-                    content=turn.content,
-                    tool_calls=aitest_tool_calls,
-                )
-            )
-
-        # Build AgentResult
+        # Turns already use aitest's Turn/ToolCall types — pass through directly
         aitest_result = AgentResult(
-            turns=aitest_turns,
+            turns=list(result.turns),
             success=result.success,
             error=result.error,
             duration_ms=result.duration_ms,
             token_usage=result.token_usage,
             cost_usd=result.cost_usd,
+            effective_system_prompt=agent.instructions or "",
         )
 
-        # Build Agent
         aitest_agent = Agent(
             name=agent.name,
             provider=Provider(model=result.model_used or agent.model or "copilot-default"),

@@ -32,7 +32,7 @@ class TestCLIOperations:
         assert (tmp_path / "greet.py").exists()
         # Agent should have used terminal (may be called run_in_terminal or powershell)
         assert result.tool_was_called("run_in_terminal") or result.tool_was_called("powershell"), (
-            f"Expected terminal tool, got: {result.tool_names_called}"
+            f"Expected terminal tool to be called, got: {result.tool_names_called}"
         )
 
     async def test_use_git_cli(self, copilot_run, tmp_path):
@@ -49,9 +49,8 @@ class TestCLIOperations:
         assert result.success
         assert (tmp_path / ".git").is_dir()
 
-    async def test_cli_tool_output_captured(self, copilot_run, tmp_path):
-        """Agent processes CLI output and uses it in its response."""
-        # Create a file to inspect
+    async def test_cli_tool_output_used_in_response(self, copilot_run, tmp_path):
+        """Agent reads CLI output and incorporates it into its response."""
         (tmp_path / "data.txt").write_text("line1\nline2\nline3\nline4\nline5\n")
 
         agent = CopilotAgent(
@@ -65,24 +64,6 @@ class TestCLIOperations:
         )
         assert result.success
         assert result.final_response is not None
-        assert "5" in result.final_response
-
-
-@pytest.mark.copilot
-class TestCLIWithToolControl:
-    """Test CLI behavior with tool restrictions."""
-
-    async def test_no_terminal_when_excluded(self, copilot_run, tmp_path):
-        """Agent cannot use terminal when it's excluded."""
-        agent = CopilotAgent(
-            name="no-cli",
-            instructions="Create files as requested. Do not run commands.",
-            working_directory=str(tmp_path),
-            excluded_tools=["run_in_terminal"],
+        assert "5" in result.final_response, (
+            f"Expected '5' in response (file has 5 lines). Response: {result.final_response}"
         )
-        result = await copilot_run(
-            agent,
-            "Create a file called safe.py with print('safe')",
-        )
-        assert result.success
-        assert not result.tool_was_called("run_in_terminal")

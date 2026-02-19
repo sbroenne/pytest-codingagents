@@ -85,6 +85,81 @@ class TestEventMapperToolCalls:
         assert len(result.all_tool_calls) == 1
         assert result.all_tool_calls[0].result is None
 
+    def test_multiple_tool_calls_same_turn(self):
+        """Multiple tool calls in one assistant turn are all captured."""
+        mapper = EventMapper()
+        mapper.handle(_make_event("assistant.turn_start"))
+        mapper.handle(
+            _make_event(
+                "tool.execution_start", tool_name="read_file", tool_call_id="tc_1", arguments="{}"
+            )
+        )
+        mapper.handle(
+            _make_event(
+                "tool.execution_start", tool_name="create_file", tool_call_id="tc_2", arguments="{}"
+            )
+        )
+        mapper.handle(_make_event("assistant.message", content="Done"))
+        result = mapper.build()
+        assert result.tool_was_called("read_file")
+        assert result.tool_was_called("create_file")
+
+    def test_same_call_id_not_duplicated(self):
+        """Same tool_call_id arriving via both assistant.message and execution_start is not duplicated."""
+        mapper = EventMapper()
+        # SDK sometimes sends tool requests in assistant.message AND execution_start
+        mapper.handle(
+            _make_event(
+                "tool.execution_start",
+                tool_name="create_file",
+                tool_call_id="tc_1",
+                arguments="{}",
+            )
+        )
+        # Second execution_start with same id should not add a second entry
+        mapper.handle(
+            _make_event(
+                "tool.execution_start",
+                tool_name="create_file",
+                tool_call_id="tc_1",
+                arguments="{}",
+            )
+        )
+        result = mapper.build()
+        assert len(result.all_tool_calls) == 1
+
+    def test_tool_arguments_json_string_parsed(self):
+        """String arguments from the SDK are parsed as JSON."""
+        mapper = EventMapper()
+        mapper.handle(
+            _make_event(
+                "tool.execution_start",
+                tool_name="create_file",
+                tool_call_id="tc_1",
+                arguments='{"path": "hello.py", "content": "print(1)"}',
+            )
+        )
+        result = mapper.build()
+        tc = result.all_tool_calls[0]
+        assert isinstance(tc.arguments, dict)
+        assert tc.arguments["path"] == "hello.py"
+
+    def test_tool_arguments_invalid_json_becomes_raw(self):
+        """Unparseable string arguments fall back to {'raw': value}."""
+        mapper = EventMapper()
+        mapper.handle(
+            _make_event(
+                "tool.execution_start",
+                tool_name="run_in_terminal",
+                tool_call_id="tc_1",
+                arguments="not valid {json",
+            )
+        )
+        result = mapper.build()
+        tc = result.all_tool_calls[0]
+        assert isinstance(tc.arguments, dict)
+        assert "raw" in tc.arguments
+
 
 class TestEventMapperUsage:
     """Test usage tracking."""
@@ -125,6 +200,38 @@ class TestEventMapperReasoning:
         result = mapper.build()
         assert len(result.reasoning_traces) == 2
         assert result.reasoning_traces[0] == "Let me think..."
+
+    def test_reasoning_delta_accumulated(self):
+        """Streaming reasoning deltas are concatenated into a single trace."""
+        mapper = EventMapper()
+        mapper.handle(_make_event("assistant.reasoning_delta", delta_content="Part 1. "))
+        mapper.handle(_make_event("assistant.reasoning_delta", delta_content="Part 2."))
+        mapper.handle(_make_event("assistant.turn_end"))  # flushes buffer
+        result = mapper.build()
+        assert len(result.reasoning_traces) == 1
+        assert result.reasoning_traces[0] == "Part 1. Part 2."
+
+
+class TestEventMapperMessageDelta:
+    """Test streaming assistant message delta accumulation."""
+
+    def test_message_delta_accumulated(self):
+        """Streaming deltas are joined into one assistant turn."""
+        mapper = EventMapper()
+        mapper.handle(_make_event("assistant.message_delta", delta_content="Hello "))
+        mapper.handle(_make_event("assistant.message_delta", delta_content="world"))
+        result = mapper.build()
+        assert result.final_response == "Hello world"
+
+    def test_delta_and_message_combined(self):
+        """Deltas accumulated before a full message are merged together."""
+        mapper = EventMapper()
+        mapper.handle(_make_event("assistant.message_delta", delta_content="Prefix "))
+        mapper.handle(_make_event("assistant.message", content="suffix"))
+        result = mapper.build()
+        # Both end up in the same assistant turn content
+        assert result.final_response is not None
+        assert "Prefix" in result.final_response or "suffix" in result.final_response
 
 
 class TestEventMapperSubagents:
@@ -177,3 +284,66 @@ class TestEventMapperBuild:
         mapper.handle(e2)
         result = mapper.build()
         assert len(result.raw_events) == 2
+
+
+class TestEventMapperUserMessage:
+    """Test user message turn creation."""
+
+    def test_user_message_creates_turn(self):
+        mapper = EventMapper()
+        mapper.handle(_make_event("user.message", content="Create a file"))
+        result = mapper.build()
+        user_turns = [t for t in result.turns if t.role == "user"]
+        assert len(user_turns) == 1
+        assert user_turns[0].content == "Create a file"
+
+    def test_user_message_empty_ignored(self):
+        mapper = EventMapper()
+        mapper.handle(_make_event("user.message", content=""))
+        result = mapper.build()
+        assert result.turns == []
+
+
+class TestEventMapperPermissions:
+    """Test permission request handling."""
+
+    def test_permission_request_captured(self):
+        mapper = EventMapper()
+        mapper.handle(
+            _make_event(
+                "tool.user_requested",
+                permission_type="file_write",
+                tool_name="create_file",
+                message="Allow creating files?",
+            )
+        )
+        result = mapper.build()
+        assert result.permission_requested is True
+        assert len(result.permissions) == 1
+        assert result.permissions[0]["type"] == "file_write"
+
+    def test_no_permissions_by_default(self):
+        mapper = EventMapper()
+        result = mapper.build()
+        assert result.permission_requested is False
+        assert result.permissions == []
+
+
+class TestEventMapperUnknownEvents:
+    """Test robustness with unknown event types."""
+
+    def test_unknown_event_does_not_crash(self):
+        """Events with unrecognised types are silently ignored."""
+        mapper = EventMapper()
+        mapper.handle(_make_event("future.new_event_type", some_field="value"))
+        mapper.handle(_make_event("assistant.message", content="Still works"))
+        result = mapper.build()
+        assert result.final_response == "Still works"
+
+    def test_turn_end_flushes_content(self):
+        """assistant.turn_end flushes accumulated assistant content."""
+        mapper = EventMapper()
+        mapper.handle(_make_event("assistant.message_delta", delta_content="Hello"))
+        mapper.handle(_make_event("assistant.turn_end"))
+        result = mapper.build()
+        assert result.final_response == "Hello"

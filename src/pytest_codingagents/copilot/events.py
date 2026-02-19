@@ -60,6 +60,8 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
+from pytest_aitest.execution.cost import estimate_cost
+
 from pytest_codingagents.copilot.result import (
     CopilotResult,
     SubagentInvocation,
@@ -90,6 +92,7 @@ class EventMapper:
         self._pending_tool_start_times: dict[str, float] = {}
         self._current_assistant_content: list[str] = []
         self._current_tool_calls: list[ToolCall] = []
+        self._current_tool_call_ids: set[str] = set()  # track call_ids in current turn
         self._usage: list[UsageInfo] = []
         self._reasoning_traces: list[str] = []
         self._reasoning_buffer: list[str] = []
@@ -165,7 +168,7 @@ class EventMapper:
                         arguments = json.loads(arguments)
                     except json.JSONDecodeError:
                         arguments = {"raw": arguments}
-                tc = ToolCall(name=name, arguments=arguments or {}, tool_call_id=call_id)
+                tc = ToolCall(name=name, arguments=arguments or {})
                 self._pending_tool_calls[call_id] = tc
                 self._current_tool_calls.append(tc)
 
@@ -216,7 +219,7 @@ class EventMapper:
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cache_read_tokens=int(_get_data_field(event, "cache_read_tokens", 0) or 0),
-                cost_usd=_compute_cost(model, input_tokens, output_tokens),
+                cost_usd=estimate_cost(model, input_tokens, output_tokens),
                 duration_ms=_get_data_field(event, "duration", 0.0) or 0.0,
             )
         )
@@ -237,12 +240,13 @@ class EventMapper:
             except json.JSONDecodeError:
                 arguments = {"raw": arguments}
 
-        tc = ToolCall(name=name, arguments=arguments, tool_call_id=call_id)
+        tc = ToolCall(name=name, arguments=arguments)
         self._pending_tool_calls[call_id] = tc
         self._pending_tool_start_times[call_id] = time.monotonic()
 
         # Associate with current assistant turn
-        if call_id not in {c.tool_call_id for c in self._current_tool_calls}:
+        if call_id not in self._current_tool_call_ids:
+            self._current_tool_call_ids.add(call_id)
             self._current_tool_calls.append(tc)
 
     def _handle_tool_execution_complete(self, event: SessionEvent) -> None:
@@ -361,30 +365,12 @@ class EventMapper:
             )
             self._current_assistant_content.clear()
             self._current_tool_calls.clear()
+            self._current_tool_call_ids.clear()
 
 
 def _get_data_field(event: SessionEvent, field: str, default: Any = None) -> Any:
     """Safely get a field from event.data (which has ~90 optional fields)."""
     return getattr(event.data, field, default)
-
-
-def _compute_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    """Compute cost in USD from token counts.
-
-    Delegates to pytest-aitest's ``estimate_cost`` which handles litellm
-    pricing lookup, ``pricing.toml`` overrides, and dated-version fallback.
-
-    The Copilot SDK's ``data.cost`` field uses an unknown unit that does NOT
-    correspond to USD, so we compute cost ourselves from token counts.
-    """
-    if input_tokens == 0 and output_tokens == 0:
-        return 0.0
-    try:
-        from pytest_aitest.execution.cost import estimate_cost
-
-        return estimate_cost(model, input_tokens, output_tokens)
-    except Exception:
-        return 0.0
 
 
 # ── Event type → handler dispatch table ──
