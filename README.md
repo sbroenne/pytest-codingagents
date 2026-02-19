@@ -1,40 +1,46 @@
 # pytest-codingagents
 
-**Combatting cargo cult programming in Agent Instructions, Skills, and Custom Agents for GitHub Copilot and other coding agents since 2026.**
+**Test-driven prompt engineering for GitHub Copilot.**
 
-Everyone's copying instruction files from blog posts, pasting "you are a senior engineer" into agent configs, and adding skills they found on Reddit. But does any of it actually work? Are your instructions making your coding agent better — or just longer? Is that skill helping, or is the agent ignoring it entirely?
+Everyone copies instruction files from blog posts, adds "you are a senior engineer" to agent configs, and includes skills found on Reddit. But does any of it work? Are your instructions making your agent better — or just longer?
 
 **You don't know, because you're not testing it.**
 
-pytest-codingagents gives you **A/B testing for coding agent configurations**. Run two configs against the same task, assert the difference, and let AI analysis tell you which one wins — and why.
+pytest-codingagents gives you a complete **test→optimize→test loop** for GitHub Copilot configurations:
+
+1. **Write a test** — define what the agent *should* do
+2. **Run it** — see it fail (or pass)
+3. **Optimize** — call `optimize_instruction()` to get a concrete suggestion
+4. **A/B confirm** — use `ab_run` to prove the change actually helps
+5. **Ship it** — you now have evidence, not vibes
 
 Currently supports **GitHub Copilot** via [copilot-sdk](https://www.npmjs.com/package/github-copilot-sdk). More agents (Claude Code, etc.) coming soon.
 
 ```python
-from pytest_codingagents import CopilotAgent
+from pytest_codingagents import CopilotAgent, optimize_instruction
+import pytest
 
-async def test_fastapi_instruction_steers_framework(copilot_run, tmp_path):
-    """Does 'always use FastAPI' actually change what the agent produces?"""
-    # Config A: generic instructions
-    baseline = CopilotAgent(
-        instructions="You are a Python developer.",
-        working_directory=str(tmp_path / "a"),
+
+async def test_docstring_instruction_works(ab_run):
+    """Prove the docstring instruction actually changes output, and get a fix if it doesn't."""
+    baseline = CopilotAgent(instructions="Write Python code.")
+    treatment = CopilotAgent(
+        instructions="Write Python code. Add Google-style docstrings to every function."
     )
-    # Config B: framework mandate
-    with_fastapi = CopilotAgent(
-        instructions="You are a Python developer. ALWAYS use FastAPI for web APIs.",
-        working_directory=str(tmp_path / "b"),
-    )
-    (tmp_path / "a").mkdir()
-    (tmp_path / "b").mkdir()
 
-    task = 'Create a web API with a GET /health endpoint returning {"status": "ok"}.'
-    result_a = await copilot_run(baseline, task)
-    result_b = await copilot_run(with_fastapi, task)
+    b, t = await ab_run(baseline, treatment, "Create math.py with add(a, b) and subtract(a, b).")
 
-    assert result_a.success and result_b.success
-    code_b = "\n".join(f.read_text() for f in (tmp_path / "b").rglob("*.py"))
-    assert "fastapi" in code_b.lower(), "FastAPI instruction was ignored — the config has no effect"
+    assert b.success and t.success
+
+    if '"""' not in t.file("math.py"):
+        suggestion = await optimize_instruction(
+            treatment.instructions or "",
+            t,
+            "Agent should add docstrings to every function.",
+        )
+        pytest.fail(f"Docstring instruction was ignored.\n\n{suggestion}")
+
+    assert '"""' not in b.file("math.py"), "Baseline should not have docstrings"
 ```
 
 ## Install
@@ -50,6 +56,7 @@ Authenticate via `GITHUB_TOKEN` env var (CI) or `gh auth status` (local).
 | Capability | What it proves | Guide |
 |---|---|---|
 | **A/B comparison** | Config B actually produces different (and better) output than Config A | [Getting Started](https://sbroenne.github.io/pytest-codingagents/getting-started/) |
+| **Instruction optimization** | Turn a failing test into a ready-to-use instruction fix | [Optimize Instructions](https://sbroenne.github.io/pytest-codingagents/how-to/optimize/) |
 | **Instructions** | Your custom instructions change agent behavior — not just vibes | [Getting Started](https://sbroenne.github.io/pytest-codingagents/getting-started/) |
 | **Skills** | That domain knowledge file is helping, not being ignored | [Skill Testing](https://sbroenne.github.io/pytest-codingagents/how-to/skills/) |
 | **Models** | Which model works best for your use case and budget | [Model Comparison](https://sbroenne.github.io/pytest-codingagents/getting-started/model-comparison/) |

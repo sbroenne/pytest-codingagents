@@ -2,10 +2,15 @@
 
 Provides the ``copilot_run`` fixture that executes prompts against Copilot
 and stashes results for pytest-aitest reporting (if installed).
+
+Also provides ``ab_run``, a higher-level fixture for A/B testing two agent
+configurations against the same task in isolated directories.
 """
 
 from __future__ import annotations
 
+import dataclasses
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -131,3 +136,66 @@ def _stash_for_aitest(
         as the ``item`` parameter.
     """
     stash_on_item(request.node, agent, result)  # type: ignore[arg-type]
+
+
+@pytest.fixture
+def ab_run(
+    request: pytest.FixtureRequest,
+    tmp_path: Path,
+) -> Callable[..., Coroutine[Any, Any, tuple[CopilotResult, CopilotResult]]]:
+    """Run two agents against the same task in isolated directories.
+
+    Creates ``baseline/`` and ``treatment/`` subdirectories under
+    ``tmp_path``, overrides ``working_directory`` on each agent so they
+    never share a workspace, then runs them sequentially and stashes the
+    treatment result for pytest-aitest reporting.
+
+    Example::
+
+        async def test_docstring_instruction(ab_run):
+            baseline = CopilotAgent(instructions="Write Python code.")
+            treatment = CopilotAgent(
+                instructions="Write Python code. Add Google-style docstrings to every function."
+            )
+
+            b, t = await ab_run(baseline, treatment, "Create math.py with add(a, b).")
+
+            assert b.success and t.success
+            assert '\"\"\"' not in b.file("math.py"), "Baseline should not have docstrings"
+            assert '\"\"\"' in t.file("math.py"), "Treatment should add docstrings"
+
+    Args:
+        baseline: Control ``CopilotAgent`` (the existing / unchanged config).
+        treatment: Treatment ``CopilotAgent`` (the change you are testing).
+        task: Prompt to give both agents.
+
+    Returns:
+        ``(baseline_result, treatment_result)`` tuple.
+    """
+
+    async def _run(
+        baseline: CopilotAgent,
+        treatment: CopilotAgent,
+        task: str,
+    ) -> tuple[CopilotResult, CopilotResult]:
+        baseline_dir = tmp_path / "baseline"
+        treatment_dir = tmp_path / "treatment"
+        baseline_dir.mkdir(exist_ok=True)
+        treatment_dir.mkdir(exist_ok=True)
+
+        # Override working directories to guarantee isolation.
+        # CopilotAgent is frozen — dataclasses.replace() creates a new instance.
+        baseline = dataclasses.replace(baseline, working_directory=str(baseline_dir))
+        treatment = dataclasses.replace(treatment, working_directory=str(treatment_dir))
+
+        # Run sequentially — agents may write to disk, install packages, etc.
+        baseline_result = await run_copilot(baseline, task)
+        treatment_result = await run_copilot(treatment, task)
+
+        # Stash treatment result for pytest-aitest reporting.
+        # Treatment is the config being evaluated; its result is what matters.
+        stash_on_item(request.node, treatment, treatment_result)
+
+        return baseline_result, treatment_result
+
+    return _run
