@@ -12,9 +12,9 @@ from __future__ import annotations
 import os
 
 import pytest
+from pytest_aitest import InstructionSuggestion, optimize_instruction
 
 from pytest_codingagents.copilot.agent import CopilotAgent
-from pytest_codingagents.copilot.optimizer import InstructionSuggestion, optimize_instruction
 
 
 @pytest.mark.copilot

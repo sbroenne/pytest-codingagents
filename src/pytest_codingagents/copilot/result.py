@@ -1,8 +1,7 @@
 """Result types for Copilot agent execution.
 
-Turn and ToolCall are re-exported from pytest-aitest's core.result module
-to avoid duplication. Copilot-specific types (SubagentInvocation, UsageInfo,
-CopilotResult) remain here.
+Turn, ToolCall, and SubagentInvocation are imported from pytest-aitest.
+Copilot-specific types (UsageInfo, CopilotResult) are defined here.
 """
 
 from __future__ import annotations
@@ -11,32 +10,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-# Re-export shared types from pytest-aitest so existing imports keep working:
-#   from pytest_codingagents.copilot.result import Turn, ToolCall
-from pytest_aitest.core.result import ToolCall, Turn
+from pytest_aitest.core.result import SubagentInvocation, ToolCall, Turn  # noqa: F401
 
 if TYPE_CHECKING:
     from pytest_codingagents.copilot.agent import CopilotAgent
 
 __all__ = [
     "CopilotResult",
-    "SubagentInvocation",
     "ToolCall",
     "Turn",
     "UsageInfo",
 ]
-
-
-@dataclass(slots=True)
-class SubagentInvocation:
-    """A subagent invocation observed during execution."""
-
-    name: str
-    status: str  # "selected", "started", "completed", "failed"
-    duration_ms: float | None = None
-
-    def __repr__(self) -> str:
-        return f"SubagentInvocation({self.name}, {self.status})"
 
 
 @dataclass(slots=True)

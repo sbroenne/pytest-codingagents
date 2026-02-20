@@ -8,11 +8,11 @@
     options:
       show_source: false
 
-::: pytest_codingagents.optimize_instruction
+::: pytest_aitest.execution.optimizer.optimize_instruction
     options:
       show_source: false
 
-::: pytest_codingagents.InstructionSuggestion
+::: pytest_aitest.execution.optimizer.InstructionSuggestion
     options:
       show_source: false
 

@@ -302,94 +302,8 @@ def _make_runsubagent_tool(
     custom_agents: list[dict[str, Any]],
     mapper: "EventMapper",
 ) -> "Tool":
-    """Build a ``runSubagent`` polyfill tool for the VS Code persona.
-
-    The Copilot CLI does not natively expose ``runSubagent`` in SDK headless
-    mode.  This factory creates a Python-side ``Tool`` that dispatches
-    registered custom agents as nested ``run_copilot`` calls.
-    """
-    from copilot.types import Tool, ToolResult
-
-    from pytest_codingagents.copilot.agent import CopilotAgent as _CopilotAgent
-    from pytest_codingagents.copilot.runner import run_copilot
-
-    agent_map: dict[str, dict[str, Any]] = {a["name"]: a for a in custom_agents}
-
-    async def _handler(invocation: "ToolInvocation") -> "ToolResult":
-        args: dict[str, Any] = invocation.get("arguments") or {}  # type: ignore[assignment]
-
-        agent_name: str | None = (
-            args.get("agent_name") or args.get("agent") or args.get("agentName")
-        )
-        prompt_text: str = args.get("prompt") or args.get("message") or args.get("task") or ""
-
-        if not agent_name:
-            available = sorted(agent_map)
-            return ToolResult(
-                textResultForLlm=(f"Error: agent_name is required. Available agents: {available}"),
-                resultType="failure",
-            )
-
-        agent_cfg = agent_map.get(agent_name)
-        if agent_cfg is None:
-            available = sorted(agent_map)
-            return ToolResult(
-                textResultForLlm=(f"Error: agent '{agent_name}' not found. Available: {available}"),
-                resultType="failure",
-            )
-
-        mapper.record_subagent_start(agent_name)
-
-        sub_agent = _CopilotAgent(
-            name=agent_name,
-            model=parent_agent.model,
-            instructions=agent_cfg.get("prompt"),
-            working_directory=parent_agent.working_directory,
-            timeout_s=min(parent_agent.timeout_s, 600.0),
-            max_turns=min(parent_agent.max_turns, 30),
-            auto_confirm=True,
-        )
-
-        sub_result = await run_copilot(sub_agent, prompt_text)
-
-        if sub_result.success:
-            mapper.record_subagent_complete(agent_name)
-            return ToolResult(
-                textResultForLlm=sub_result.final_response or "Sub-agent completed.",
-                resultType="success",
-            )
-
-        mapper.record_subagent_failed(agent_name)
-        return ToolResult(
-            textResultForLlm=f"Sub-agent '{agent_name}' failed: {sub_result.error}",
-            resultType="failure",
-        )
-
-    return Tool(
-        name="runSubagent",
-        description=(
-            "Dispatch a named custom agent to perform a task. "
-            "The agent runs with its own instructions and returns its "
-            "final response. "
-            f"Available agents: {sorted(agent_map)}"
-        ),
-        handler=_handler,
-        parameters={
-            "type": "object",
-            "properties": {
-                "agent_name": {
-                    "type": "string",
-                    "description": "Name of the agent to dispatch.",
-                    "enum": sorted(agent_map),
-                },
-                "prompt": {
-                    "type": "string",
-                    "description": "Task or message to send to the agent.",
-                },
-            },
-            "required": ["agent_name", "prompt"],
-        },
-    )
+    """Build a ``runSubagent`` polyfill tool for the VS Code persona."""
+    return _make_subagent_dispatch_tool("runSubagent", parent_agent, custom_agents, mapper)
 
 
 def _make_task_tool(
@@ -397,10 +311,30 @@ def _make_task_tool(
     custom_agents: list[dict[str, Any]],
     mapper: "EventMapper",
 ) -> "Tool":
-    """Build a ``task`` polyfill tool for the Claude Code persona.
+    """Build a ``task`` polyfill tool for the Claude Code persona."""
+    return _make_subagent_dispatch_tool("task", parent_agent, custom_agents, mapper)
 
-    Identical dispatch mechanism to ``_make_runsubagent_tool`` but named
-    ``task`` to match Claude Code's native sub-agent dispatch API.
+
+def _make_subagent_dispatch_tool(
+    tool_name: str,
+    parent_agent: "CopilotAgent",
+    custom_agents: list[dict[str, Any]],
+    mapper: "EventMapper",
+) -> "Tool":
+    """Build a subagent dispatch polyfill tool.
+
+    The Copilot CLI does not natively expose ``runSubagent`` or ``task`` in
+    SDK headless mode.  This factory creates a Python-side ``Tool`` that
+    dispatches registered custom agents as nested ``run_copilot`` calls.
+
+    Args:
+        tool_name: Name to register the tool as (``"runSubagent"`` for VS Code,
+            ``"task"`` for Claude Code).
+        parent_agent: The orchestrator ``CopilotAgent`` being executed.
+        custom_agents: List of custom agent config dicts (each with at least
+            a ``name`` key, optionally ``prompt``, ``description``).
+        mapper: The ``EventMapper`` for the current run, used to record
+            subagent lifecycle events.
     """
     from copilot.types import Tool, ToolResult
 
@@ -416,7 +350,11 @@ def _make_task_tool(
             args.get("agent_name") or args.get("agent") or args.get("agentName")
         )
         prompt_text: str = (
-            args.get("prompt") or args.get("message") or args.get("description") or ""
+            args.get("prompt")
+            or args.get("message")
+            or args.get("task")
+            or args.get("description")
+            or ""
         )
 
         if not agent_name:
@@ -462,11 +400,10 @@ def _make_task_tool(
         )
 
     return Tool(
-        name="task",
+        name=tool_name,
         description=(
-            "Dispatch a named agent to perform a task. "
-            "The agent runs with its own instructions and returns its "
-            "final response. "
+            f"Dispatch a named agent to perform a task using the {tool_name} tool. "
+            "The agent runs with its own instructions and returns its final response. "
             f"Available agents: {sorted(agent_map)}"
         ),
         handler=_handler,
