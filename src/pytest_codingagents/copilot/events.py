@@ -60,11 +60,11 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
+from pytest_aitest.core.result import SubagentInvocation
 from pytest_aitest.execution.cost import estimate_cost
 
 from pytest_codingagents.copilot.result import (
     CopilotResult,
-    SubagentInvocation,
     ToolCall,
     Turn,
     UsageInfo,

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from pytest_codingagents.copilot.optimizer import InstructionSuggestion, optimize_instruction
+from pytest_aitest import InstructionSuggestion, optimize_instruction
+
 from pytest_codingagents.copilot.result import CopilotResult, ToolCall, Turn
 
-# Patch targets
-_AGENT_PATCH = "pytest_codingagents.copilot.optimizer.PydanticAgent"
-_BUILD_MODEL_PATCH = "pytest_codingagents.copilot.optimizer.build_model_from_string"
+# Patch targets — the optimizer now lives in pytest_aitest
+_AGENT_PATCH = "pytest_aitest.execution.optimizer.PydanticAgent"
+_BUILD_MODEL_PATCH = "pytest_aitest.execution.optimizer.build_model_from_string"
 _FAKE_MODEL = MagicMock(name="fake-model")
 
 

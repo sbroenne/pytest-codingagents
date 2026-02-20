@@ -87,11 +87,11 @@ async def test_docstring_instruction_iterates(ab_run, tmp_path):
 
 ## API Reference
 
-::: pytest_codingagents.copilot.optimizer.optimize_instruction
+::: pytest_aitest.execution.optimizer.optimize_instruction
 
 ---
 
-::: pytest_codingagents.copilot.optimizer.InstructionSuggestion
+::: pytest_aitest.execution.optimizer.InstructionSuggestion
 
 ## Choosing a Model
 
