@@ -89,10 +89,6 @@ async def test_docstring_instruction_iterates(ab_run, tmp_path):
 
 ::: pytest_aitest.execution.optimizer.optimize_instruction
 
----
-
-::: pytest_aitest.execution.optimizer.InstructionSuggestion
-
 ## Choosing a Model
 
 `optimize_instruction()` defaults to `openai:gpt-4o-mini` — cheap, fast, and precise enough for instruction analysis.
